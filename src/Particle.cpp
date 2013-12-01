@@ -4,7 +4,6 @@
 #include "ParticleEmitter.h"
 
 #define DEG_TO_RAD( x ) ( ( x ) * 0.017453292519943295769236907684886 )
-#define DAMPNESS 0.9f
 
 Particle::Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _direction ) :
   m_position( _position ),
@@ -19,6 +18,7 @@ Particle::Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _d
   m_fadeInTime( 0.0f ),
   m_fadeOutTime( 0.0f ),
   m_owner( _owner ),
+  m_group( -1 ),
   m_fadeFactor( 0.0f ),
   m_maxRadius( 0.0f )
 {
@@ -54,8 +54,8 @@ void Particle::update( double _currentTime, double _delta )
   m_velocity += m_acceleration;
   m_direction = m_velocity.normalized();
   limitSpeed();
-  m_position += m_velocity * _delta;
-  m_acceleration *= DAMPNESS;
+  m_position += m_velocity * _delta * m_owner->m_particleSpeedRatio;
+  m_acceleration *= m_owner->m_dampness;
 
 
   if ( m_fadeInTime != 0.0f && _currentTime < m_fadeInTime )
@@ -114,7 +114,7 @@ void Particle::draw( void )
   ci::gl::color( m_color );
   m_color.a = alpha;
 
-  ci::gl::drawSolidCircle( m_position + m_owner->m_position, m_radius, 6 );
+  ci::gl::drawSolidCircle( m_position + m_owner->m_position, m_radius * m_owner->m_particleSizeRatio, 6 );
 }
 
 

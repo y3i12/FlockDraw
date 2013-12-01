@@ -18,6 +18,8 @@ public:
 
   virtual void setup( );
 
+  ci::Vec2f&   position() { return m_position; }
+
 protected:
   void         updateColorByRef();
   void         limitSpeed();
@@ -46,6 +48,8 @@ public:
   ci::Surface*        m_referenceSurface;
 
   ParticleEmitter*    m_owner;
+
+  int                 m_group;
   
 private:
   float               m_fadeFactor;

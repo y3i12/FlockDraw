@@ -106,21 +106,35 @@ void CinderApp::setup()
 
   m_gui->addLabel( "press 'h' to hide/show" );
 	m_gui->addSeparator();
-	m_gui->addLabel( "SETTINGS");
-	m_gui->addParam( "Cycle Time", &m_cycleImageEvery, 3.0f, 120.0f, 15.0f );
-  m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    300   );
+  m_gui->addLabel( "General Settings" );
+	m_gui->addParam( "Pic. Cycle Time", &m_cycleImageEvery,                       3.0f, 120.0f, 15.0f );
+  m_gui->addParam( "Particle Size",   &m_particleEmitter.m_particleSizeRatio,   0.5f,   3.0f,  1.0f );
+  m_gui->addParam( "Particle Speed",  &m_particleEmitter.m_particleSpeedRatio,  0.2f,   3.0f,  1.0f );
+  m_gui->addParam( "Dampness",        &m_particleEmitter.m_dampness,           0.01f,  0.99f,  0.9f );
+
 #ifdef _DEBUG
-  m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     1   );
+  m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    150   );
+  m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     2   );
 #else
+  m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    300   );
   m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     5   );
 #endif
   
+	m_gui->addSeparator();
+  m_gui->addLabel( "Flocking Settings" );
+    
+  m_gui->addParam( "Repel Str.",      &m_particleEmitter.m_repelStrength,       0.000f,     0.5f,   0.04f );
+  m_gui->addParam( "Align Str.",      &m_particleEmitter.m_alignStrength,       0.000f,     0.5f,   0.04f );
+  m_gui->addParam( "Att. Str.",       &m_particleEmitter.m_attractStrength,     0.000f,     0.5f,   0.02f );
+  m_gui->addParam( "Grp. Repel Str.", &m_particleEmitter.m_groupRepelStrength,  0.000f,     0.5f,   0.01f );
+  m_gui->addParam( "Area Size",       &m_particleEmitter.m_zoneRadiusSqrd,      625.0f, 10000.0f, 5625.0f ),
+  m_gui->addParam( "Repel Area",      &m_particleEmitter.m_lowThresh,             0.0f,     1.0f,  0.125f );
+  m_gui->addParam( "Align Area",      &m_particleEmitter.m_highThresh,            0.0f,     1.0f,   0.65f );
+
   m_gui->addSeparator();
   
   m_openImageButton = m_gui->addButton( "Open Image" );
   m_openImageButton->registerClick( this, &CinderApp::openImageCallBack );
-
-	m_gui->addSeparator();
   
   m_nextImageButton = m_gui->addButton( "Next Image" );
   m_nextImageButton->registerClick( this, &CinderApp::nextImageCallBack );
@@ -272,7 +286,7 @@ void CinderApp::setImage( fs::path& _path, double _currentTime )
 
   for ( int i = 0; i < m_particleGroups; ++i )
   {
-    m_particleEmitter.addParticles( m_particleCount );
+    m_particleEmitter.addParticles( m_particleCount, i );
   }
 
   // resets the cycle counter;

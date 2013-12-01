@@ -14,7 +14,20 @@ ParticleEmitter::ParticleEmitter(void) :
   m_fadeInTime( 0.0f ),
   m_fadeOutTime( 0.0f ),
   m_particlesPerSecond( 0.0f ),
+  m_zoneRadiusSqrd( 75.0f * 75.0f ),
+  m_repelStrength( 0.04f ),
+  m_alignStrength( 0.04f ),
+  m_attractStrength( 0.02f ),
+  m_groupRepelStrength( 0.1f ),
+  m_lowThresh( 0.125f ),
+  m_highThresh( 0.65f ),
   m_referenceSurface( 0 ),
+  m_particleSizeRatio( 1.0f ),
+  m_particleSpeedRatio( 1.0f ),
+  m_dampness( 0.9f ),
+#if defined __USE_MATRIX_UPDATER__
+  m_matrixUpdater( 75.0f, ci::Vec2f( 800.0f, 600.0f ) ),
+#endif
   m_particlesPerSecondLeftOver( 0.0f )
 {
 }
@@ -23,8 +36,8 @@ ParticleEmitter::~ParticleEmitter(void)
 {
 }
 
-#define EMISSION_AREA_PERCENTAGE 0.01f
-void ParticleEmitter::addParticles( int _aumont )
+#define EMISSION_AREA_PERCENTAGE 0.3f
+void ParticleEmitter::addParticles( int _aumont, int _group )
 {
   ci::Vec2f refSize;
   ci::Area  emissionArea( m_position, m_position );
@@ -38,11 +51,15 @@ void ParticleEmitter::addParticles( int _aumont )
     emissionArea.y2 = emissionArea.y1 + refSize.y * EMISSION_AREA_PERCENTAGE;
   }
   
+  
+  float angle = ci::Rand::randFloat( 0.0f, 2 * PI );
+
   for ( int i = 0; i < _aumont; ++i )
   {
-    float angle = ci::Rand::randFloat( 0.0f, 2 * PI );
-    float u = sin( angle );
-    float v = cos( angle );
+    
+    float angleVar  = ci::Rand::randFloat( 0.0f, 0.8f * PI );
+    float u         = sin( angle + angleVar );
+    float v         = cos( angle + angleVar );
 
     Particle* p = 0;
     if ( m_referenceSurface )
@@ -75,14 +92,16 @@ void ParticleEmitter::addParticles( int _aumont )
     p->m_maxSpeedSquared = ci::Rand::randFloat( 10, 50 );
     p->m_minSpeedSquared = ci::Rand::randFloat( 1, 10 );
     
-    p->m_acceleration.x      = ci::Rand::randFloat( 0, 10 ) - 5.0f;
-    p->m_acceleration.y      = ci::Rand::randFloat( 0, 10 ) - 5.0f;
+    p->m_acceleration         = p->m_direction;
     p->m_acceleration.normalize();
-    p->m_acceleration       *= 2.5f;
-
-    p->m_radius          = 5.0f;
+    p->m_acceleration        *= 2.5f;
+    p->m_group                = _group;
+    p->m_radius               = 5.0f;
 
     p->setup( );
+#if defined __USE_MATRIX_UPDATER__
+    m_matrixUpdater.insert( p );
+#endif
     m_particles.push_back( p );
   }
 }
@@ -120,6 +139,11 @@ void ParticleEmitter::update( double _currentTime, double _delta )
   std::list< Particle* >::iterator itr_end = m_particles.end();
   std::list< Particle* >::iterator itr2;
 
+#if defined __USE_MATRIX_UPDATER__
+  MatrixUpdater< Particle >::iterator mu_itr;
+  MatrixUpdater< Particle >::iterator mu_itr_end;
+#endif
+
   // update the flocking routine
   while ( itr != itr_end )
   {
@@ -131,53 +155,83 @@ void ParticleEmitter::update( double _currentTime, double _delta )
       ++itr;
       delete p1;
       m_particles.erase( itr2 );
+#if defined __USE_MATRIX_UPDATER__
+      m_matrixUpdater.erase( p1 );
+#endif
       continue;
     }
          
+#if defined __USE_MATRIX_UPDATER__
+    mu_itr      = m_matrixUpdater.lower_bound( p1 );
+    mu_itr_end  = m_matrixUpdater.upper_bound( p1 );
+#else
     itr2 = itr;
+#endif
 
-    //*
-    for( ++itr2; itr2 != itr_end; ++itr2 ) 
+    
+#if defined __USE_MATRIX_UPDATER__ 
+    for (; mu_itr != mu_itr_end; ++mu_itr )
+#else
+    for( ++itr2; itr2 != itr_end; ++itr2 )
+#endif
     {
+      
+#if defined __USE_MATRIX_UPDATER__ 
+      Particle* p2              = *mu_itr;
+#else
       Particle* p2             = *itr2;
-      ci::Vec2f dir            = p1->m_position - p2->m_position;
-      float     distSqrd       = dir.lengthSquared();
-			float     zoneRadiusSqrd = 75.0f * 75.0f;//( p1->m_radius * p2->m_radius * p1->m_radius * p2->m_radius ) * 5.0f;
+#endif
+
+      ci::Vec2f dir             = p1->m_position - p2->m_position;
+      float     distSqrd        = dir.lengthSquared();
 			
-			if( distSqrd < zoneRadiusSqrd ) // Neighbor is in the zone
+#if !defined __USE_MATRIX_UPDATER__ 
+			if( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
+#endif
       {			
-				float percent = distSqrd/zoneRadiusSqrd;
-	
-				if( percent < lowThresh )			// Separation
+				float percent = distSqrd/m_zoneRadiusSqrd;
+	      
+        if ( p1->m_group == p2->m_group )
         {
-					float F = ( lowThresh/percent - 1.0f ) * 0.04f;//repelStrength;
+				  if( percent < lowThresh )			// Separation
+          {
+					  float F = ( lowThresh/percent - 1.0f ) * m_repelStrength;
+					  dir = dir.normalized() * F;
+			
+					  p1->m_acceleration += dir;
+					  p2->m_acceleration -= dir;
+				  } 
+          else if( percent < highThresh ) // Alignment
+          {	
+					  float threshDelta     = highThresh - lowThresh;
+					  float adjustedPercent	= ( percent - lowThresh )/threshDelta;
+					  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength;
+					
+					  p1->m_acceleration += p2->m_direction * F;
+					  p2->m_acceleration += p1->m_direction * F;
+					
+				  } 
+          else 								// Cohesion
+          {
+					  float threshDelta     = 1.0f - highThresh;
+					  float adjustedPercent	= ( percent - highThresh )/threshDelta;
+					  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength;
+										
+					  dir.normalize();
+					  dir *= F;
+			
+					  p1->m_acceleration -= dir;
+					  p2->m_acceleration += dir;
+				  }
+        }
+        else
+        {
+					float F = ( highThresh / percent - 1.0f ) * m_groupRepelStrength;
 					dir = dir.normalized() * F;
 			
 					p1->m_acceleration += dir;
 					p2->m_acceleration -= dir;
-				} 
-        else if( percent < highThresh ) // Alignment
-        {	
-					float threshDelta     = highThresh - lowThresh;
-					float adjustedPercent	= ( percent - lowThresh )/threshDelta;
-					float F               = ( 1.0 - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * 0.04f;//alignStrength;
-					
-					p1->m_acceleration += p2->m_direction * F;
-					p2->m_acceleration += p1->m_direction * F;
-					
-				} 
-        else 								// Cohesion
-        {
-					float threshDelta     = 1.0f - highThresh;
-					float adjustedPercent	= ( percent - highThresh )/threshDelta;
-					float F               = ( 1.0 - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * 0.02f;//attractStrength;
-										
-					dir.normalize();
-					dir *= F;
-			
-					p1->m_acceleration -= dir;
-					p2->m_acceleration += dir;
-				}
+        }
 			}
     }
     //*/
@@ -186,6 +240,11 @@ void ParticleEmitter::update( double _currentTime, double _delta )
 
     ++itr;
   }
+
+  
+#if defined __USE_MATRIX_UPDATER__ 
+  m_matrixUpdater.update();
+#endif
 }
 
 void ParticleEmitter::killAll( double _currentTime )

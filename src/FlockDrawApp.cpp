@@ -7,77 +7,89 @@
 #include "cinder/Filesystem.h"
 #include "ParticleEmitter.h"
 #include "cinder/app/FileDropEvent.h"
+#include "SimpleGUI.h"
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
+using namespace mowa::sgui;
 
+#define SGUI_CONFIG_FILE "settings.sgui.txt"
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 class CinderApp : public AppNative 
 {
 public:
 	void setup();
-	void mouseDown( MouseEvent event );	
-	void update();
-	void draw();
-	void prepareSettings( Settings *settings );
-	void fileDrop (ci::app::FileDropEvent e);
-  void updateOutputArea( Vec2i& _imageSize );
+	
+  // mouse events
+  void mouseDown( ci::app::MouseEvent     _event );	
+	void mouseUp(   ci::app::MouseEvent     _event );
+  void mouseDrag( ci::app::MouseEvent     _event );
+	void fileDrop ( ci::app::FileDropEvent  _event );
+  void keyDown(   ci::app::KeyEvent       _event );
 
+  // gui buttons
+  bool openImageCallBack( ci::app::MouseEvent _event );
+  bool nextImageCallBack( ci::app::MouseEvent _event );
+  
+	// misc routines
+  void updateOutputArea( Vec2i& _imageSize );
+  void setImage( fs::path& _path, double _currentTime = 0.0 );
+
+  // main routines
+  void update();
+	void draw();
+  void prepareSettings( Settings *settings );
+
+
+  // properties
   Surface                     m_surface;
   gl::Texture                 m_texture;
   Area                        m_outputArea;
   ParticleEmitter             m_particleEmitter;
-  double                      m_lastTime;
   gl::Fbo                     m_frameBufferObject;
   std::vector< ci::fs::path > m_files;
   double                      m_cycleImageEvery;
+  int                         m_particleCount;
+  int                         m_particleGroups;
+  
+  bool                        m_hideGui;
+  SimpleGUI*                  m_gui;
+  ButtonControl*              m_openImageButton;
+  ButtonControl*              m_nextImageButton;
+  LabelControl*               m_currentImageLabel;
 
 private:
+  double                      m_lastTime;
+  double                      m_currentTime;
   double                      m_cycleCounter;
 };
 
-void CinderApp::fileDrop (ci::app::FileDropEvent e)
-{
-  m_files        = e.getFiles();
-  m_cycleCounter = m_cycleImageEvery;
-}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 void CinderApp::setup()
 {
-  m_cycleImageEvery = 15.0;
+  // config vars
+  m_cycleImageEvery = 0.0;
+  m_particleCount   = 0;
+  m_particleGroups  = 0;
 
-  try
-  {
-    if ( getArgs().size() > 1 )
-    {
-      const std::vector< std::string >& args = getArgs();
-
-      for ( size_t i = 1; i < args.size(); ++i )
-      {
-        m_files.push_back( fs::canonical( fs::path( args[ i ] ) ) );
-      }
-
-      m_cycleCounter = m_cycleImageEvery;
-    }
-    else
-    {
-      m_cycleCounter  = -1.0;
-    }
-
-
-  }
-  catch ( ... )
-  {
-    console() << "Unable to load the image" << std::endl;
-  }
-  
+  // buffer for trails
   m_frameBufferObject = gl::Fbo( 800, 600, true );
   m_frameBufferObject.bindFramebuffer();
   gl::enableAlphaBlending();
   gl::clear( Color( 0.0f, 0.0f, 0.0f ) ); 
   m_frameBufferObject.unbindFramebuffer();
 
+  // emitter
   m_particleEmitter.m_maxLifeTime        = 0.0;
   m_particleEmitter.m_minLifeTime        = 10.0;
   m_particleEmitter.m_fadeInTime         = 0.5f;
@@ -85,16 +97,150 @@ void CinderApp::setup()
   m_particleEmitter.m_referenceSurface   = &m_surface;
   m_particleEmitter.m_screenTexture      = &m_frameBufferObject.getTexture();
   m_particleEmitter.m_particlesPerSecond = 0;
+
+  // GUI
+  m_hideGui         = false;
+  m_gui             = new SimpleGUI( this );
+	m_gui->lightColor = ColorA( 1, 1, 0, 1 );	
+  m_gui->textFont   = Font( "Consolas", 12 );
+
+  m_gui->addLabel( "press 'h' to hide/show" );
+	m_gui->addSeparator();
+	m_gui->addLabel( "SETTINGS");
+	m_gui->addParam( "Cycle Time", &m_cycleImageEvery, 3.0f, 120.0f, 15.0f );
+  m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    300   );
+#ifdef _DEBUG
+  m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     1   );
+#else
+  m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     5   );
+#endif
   
-  m_lastTime        = ci::app::getElapsedSeconds();
+  m_gui->addSeparator();
+  
+  m_openImageButton = m_gui->addButton( "Open Image" );
+  m_openImageButton->registerClick( this, &CinderApp::openImageCallBack );
+
+	m_gui->addSeparator();
+  
+  m_nextImageButton = m_gui->addButton( "Next Image" );
+  m_nextImageButton->registerClick( this, &CinderApp::nextImageCallBack );
+  
+  // Image name
+  m_gui->addSeparator();
+  m_gui->addLabel( "Current Image:" );
+  m_currentImageLabel = m_gui->addLabel( ""  );
+  
+  // deserved credits
+  m_gui->addSeparator();
+  m_gui->addLabel( "y3i12: Yuri Ivatchkovitch" );
+  m_gui->addLabel( "http://y3i12.tumblr.com/"  );
+  
+  // load images passed via args
+  if ( getArgs().size() > 1 )
+  {
+    const std::vector< std::string >& args = getArgs();
+
+    for ( size_t i = 1; i < args.size(); ++i )
+    {
+      m_files.push_back( fs::canonical( fs::path( args[ i ] ) ) );
+    }
+
+    setImage( m_files.front(), m_currentTime );
+    if ( m_files.size() > 1 )
+    {
+      m_cycleCounter = 0;
+    }
+  }
+  else
+  {
+    m_cycleCounter  = -1.0;
+  }
+
+  // mark the time to test counters  
+  m_lastTime = ci::app::getElapsedSeconds();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-void CinderApp::mouseDown( MouseEvent event )
+void CinderApp::mouseDown( ci::app::MouseEvent _event )
+{
+  m_gui->onMouseDown( _event );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CinderApp::mouseUp(  ci::app::MouseEvent _event )
+{
+    m_gui->onMouseUp( _event );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CinderApp::mouseDrag( ci::app::MouseEvent _event )
+{
+  m_gui->onMouseDrag( _event );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CinderApp::fileDrop (ci::app::FileDropEvent e)
+{
+  m_files = e.getFiles();
+  
+  setImage( m_files.front(), m_currentTime );
+  
+  if ( m_files.size() > 1 )
+  {
+    m_cycleCounter = 0;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CinderApp::keyDown( ci::app::KeyEvent _event )
+{
+  switch( _event.getChar() ) 
+  {				
+		case 'd': m_gui->dump();                   break; //prints values of all the controls to the console			
+		case 'l': m_gui->load( SGUI_CONFIG_FILE ); break;
+		case 's': m_gui->save( SGUI_CONFIG_FILE ); break;				
+    case 'h': m_hideGui = !m_hideGui;          break;
+	}
+
+	switch(_event.getCode()) 
+  {
+    case KeyEvent::KEY_ESCAPE: quit(); break;
+    case KeyEvent::KEY_SPACE:  nextImageCallBack( ci::app::MouseEvent() );
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool CinderApp::openImageCallBack( ci::app::MouseEvent _event )
+{
+  std::vector< std::string > theExtensions;
+  theExtensions.push_back( "jpg" );
+    
+  m_cycleCounter  = -1.0;
+  m_files.clear();
+
+  fs::path aPath = getOpenFilePath( "", theExtensions );  
+  if ( aPath.empty() || fs::is_regular_file( aPath ) )
+  {
+    setImage( aPath, m_currentTime );
+  }
+  return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool CinderApp::nextImageCallBack( ci::app::MouseEvent _event )
 {
   m_cycleCounter = m_cycleImageEvery;
+  return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
 void CinderApp::updateOutputArea( Vec2i& _imageSize )
 {
@@ -109,21 +255,42 @@ void CinderApp::updateOutputArea( Vec2i& _imageSize )
     m_particleEmitter.m_position = Vec2f( static_cast< float >( m_outputArea.x1 ), static_cast< float >( m_outputArea.y1 ) );
 }
 
-void CinderApp::update()
+void CinderApp::setImage( fs::path& _path, double _currentTime )
 {
-  if ( m_cycleCounter == -1.0 )
+  // load the image and set the texture
+  m_surface = loadImage( _path );
+  m_texture = m_surface;
+  
+  // update  the image name
+  m_currentImageLabel->setText( _path.filename().string() );
+
+  // update the output area
+  updateOutputArea( m_surface.getSize() );
+
+  // kill old particles and add new ones
+  m_particleEmitter.killAll( _currentTime );
+
+  for ( int i = 0; i < m_particleGroups; ++i )
   {
-    return;
+    m_particleEmitter.addParticles( m_particleCount );
   }
 
-  double currentTime = ci::app::getElapsedSeconds();
-  double delta       = currentTime - m_lastTime ;
+  // resets the cycle counter;
+  m_cycleCounter = -1.0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CinderApp::update()
+{
+  m_currentTime = ci::app::getElapsedSeconds();
+  double delta  = m_currentTime - m_lastTime;
 
   if ( m_cycleCounter != -1.0 )
   {
     m_cycleCounter += delta;
 
-    if ( m_cycleCounter >= m_cycleImageEvery )
+    if ( m_cycleCounter >= m_cycleImageEvery && m_files.size() > 1 )
     {
       m_cycleCounter -= m_cycleImageEvery;
 
@@ -131,48 +298,53 @@ void CinderApp::update()
       m_files.erase( m_files.begin() );
       m_files.push_back( aPath );
 
-      m_surface = loadImage( aPath );
-      m_texture = m_surface;
-
-      updateOutputArea( m_surface.getSize() );
-
-      m_particleEmitter.killAll( currentTime );
-
-      m_particleEmitter.addParticles( 300 );
-#if !defined _DEBUG
-      m_particleEmitter.addParticles( 300 );
-      m_particleEmitter.addParticles( 300 );
-      m_particleEmitter.addParticles( 300 );
-      m_particleEmitter.addParticles( 300 );
-#endif
+      setImage( aPath, m_currentTime );
     }
   }
 
-  m_particleEmitter.update( currentTime, delta );
+  m_particleEmitter.update( m_currentTime, delta );
 
-  m_lastTime = currentTime;
-  //m_particleEmitter.addParticles( 50 );
+  m_lastTime = m_currentTime;
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 void CinderApp::draw()
 {
-  if ( m_cycleCounter == -1.0 )
-  {
-    return;
-  }
+	// clear out the window with black and set gl confs
+	gl::clear( Color( 0.0f, 0.0f, 0.0f ) );
+  gl::disableDepthRead();    
+  gl::pushMatrices();
+  gl::translate( Vec3f( 0.0f, 0.0f, 0.0f ) );
 
-	// clear out the window with black
-	gl::clear( Color( 0.0f, 0.0f, 0.0f ) ); 
-
+  // writes backed up frame buffer to the screen
   m_frameBufferObject.blitToScreen( getWindowBounds(), getWindowBounds() );
-
-  gl::color( 0.0f, 0.0f, 0.0f, 0.01f );
+  
+  // darkens the BG
+  gl::enableAlphaBlending();
+  gl::color( 0.0f, 0.0f, 0.0f, 0.01f ); 
   gl::drawSolidRect( getWindowBounds() );
 
+  // do the drawing =D
   m_particleEmitter.draw();
     
+  // save what happened to the framebuffer
   m_frameBufferObject.blitFromScreen( getWindowBounds(), getWindowBounds() );
+   
+  // reset gl confs
+  gl::enableDepthRead();    
+  gl::disableAlphaBlending();
+  gl::popMatrices();	
+
+  // draw the UI
+  if ( !m_hideGui ) 
+  {
+    m_gui->draw();
+  }
+
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 void CinderApp::prepareSettings( Settings *settings )
 {
@@ -180,4 +352,10 @@ void CinderApp::prepareSettings( Settings *settings )
   settings->setFrameRate( 60.0f );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 CINDER_APP_NATIVE( CinderApp, RendererGl )
+  
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,3 +1,5 @@
 *.jpg
 vc11/FlockDraw.opensdf
 vc11/FlockDraw.sdf
+vc11/Debug/
+vc11/Release/

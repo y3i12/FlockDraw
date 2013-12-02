@@ -37,8 +37,8 @@ public:
   void keyDown(   ci::app::KeyEvent       _event );
 
   // gui buttons
-  bool openImageCallBack( ci::app::MouseEvent _event );
-  bool nextImageCallBack( ci::app::MouseEvent _event );
+  bool openImageCallBack();
+  bool nextImageCallBack();
   
 	// misc routines
   void updateOutputArea( Vec2i& _imageSize );
@@ -137,10 +137,10 @@ void CinderApp::setup()
   m_gui->addSeparator();
   
   m_openImageButton = m_gui->addButton( "Open Image" );
-  m_openImageButton->registerClick( this, &CinderApp::openImageCallBack );
+  m_openImageButton->registerCallback( this, &CinderApp::openImageCallBack );
   
   m_nextImageButton = m_gui->addButton( "Next Image" );
-  m_nextImageButton->registerClick( this, &CinderApp::nextImageCallBack );
+  m_nextImageButton->registerCallback( this, &CinderApp::nextImageCallBack );
 
   // some info
   m_gui->addSeparator();
@@ -200,28 +200,25 @@ void CinderApp::setup()
 
 void CinderApp::mouseDown( ci::app::MouseEvent _event )
 {
-  m_gui->onMouseDown( _event );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CinderApp::mouseUp(  ci::app::MouseEvent _event )
+void CinderApp::mouseUp( ci::app::MouseEvent _event )
 {
-    m_gui->onMouseUp( _event );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void CinderApp::mouseDrag( ci::app::MouseEvent _event )
 {
-  m_gui->onMouseDrag( _event );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CinderApp::fileDrop (ci::app::FileDropEvent e)
+void CinderApp::fileDrop ( ci::app::FileDropEvent _event )
 {
-  m_files = e.getFiles();
+  m_files = _event.getFiles();
   
   setImage( m_files.front(), m_currentTime );
   
@@ -282,7 +279,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 
     case 'o':
       {
-        openImageCallBack( ci::app::MouseEvent() );
+        openImageCallBack();
       }
       break;
 	}
@@ -303,7 +300,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 
     case KeyEvent::KEY_SPACE:  
       {
-        nextImageCallBack( ci::app::MouseEvent() );
+        nextImageCallBack();
       }
       break;
 	}
@@ -311,7 +308,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool CinderApp::openImageCallBack( ci::app::MouseEvent _event )
+bool CinderApp::openImageCallBack()
 {
   std::vector< std::string > theExtensions;
   theExtensions.push_back( "jpg" );
@@ -331,7 +328,7 @@ bool CinderApp::openImageCallBack( ci::app::MouseEvent _event )
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool CinderApp::nextImageCallBack( ci::app::MouseEvent _event )
+bool CinderApp::nextImageCallBack()
 {
   m_cycleCounter = m_cycleImageEvery;
   return false;

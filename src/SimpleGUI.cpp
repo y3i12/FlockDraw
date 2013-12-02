@@ -538,7 +538,7 @@ void Control::setBackgroundColor( ColorA color )
 bool CallbackControl::triggerCallback() 
 {
   CallbackMgr< bool( void ) >::iterator itr     = callbacks.begin();
-  CallbackMgr< bool( void ) >::iterator itr_end = callbacks.begin();
+  CallbackMgr< bool( void ) >::iterator itr_end = callbacks.end();
 
   for( ; itr != itr_end; ++itr ) 
   {
@@ -1182,6 +1182,7 @@ LabelControl::LabelControl( const std::string& name ) :
 void LabelControl::setText( const std::string& text ) 
 {
   name = text;
+  updateLabel( name );
 }  
   
 Vec2f LabelControl::draw( Vec2f pos ) 
@@ -1202,7 +1203,7 @@ Vec2f LabelControl::draw( Vec2f pos )
   ) );        
   
   gl::color( ColorA( 1.0f, 1.0f, 1.0f, 1.0f ) );
-  gl::draw(labelTexture, pos);
+  gl::draw( labelTexture, pos );
 
   pos.y += SimpleGUI::labelSize.y + SimpleGUI::spacing;    
   

@@ -237,7 +237,7 @@ public:
   T  max;
 
 public:
-    TemplatedVarControl(const std::string& name, T* var, T min=0, T max=1, T defaultValue = 0) :
+  TemplatedVarControl(const std::string& name, T* var, T min=0, T max=1, T defaultValue = 0) :
     CallbackControl( getType< T >(), name )
   {
     this->name = name;
@@ -257,6 +257,7 @@ public:
     {
       *var = defaultValue;
     }
+    setValueOnLabel();
   }
 
   template < class T > Type getType()           { return Control::FLOAT_VAR;  }
@@ -326,9 +327,12 @@ public:
     float value = static_cast< float >( event.getPos().x - activeArea.x1 ) / static_cast< float >( activeArea.x2 - activeArea.x1 );
     value = math< float >::max( 0.0f, math< float >::min( value, 1.0f ) );  
     setNormalizedValue( value );
+
+    triggerCallback();
+    setValueOnLabel();
   }
   
-  void onMouseWheel(ci::app::MouseEvent event)
+  void onMouseWheel( ci::app::MouseEvent event )
   {
     const float step      = static_cast< float >( ( max - min ) / 100.0f );
     const float delta     = event.getWheelIncrement() * step;
@@ -336,10 +340,15 @@ public:
     
     *var = math< T >::clamp( newValue, min, max );
     triggerCallback();
+    setValueOnLabel();
+  }
+
+  void setValueOnLabel()
+  {
     std::stringstream ss;
-    ss <<  name << " " << *this->var;
+    ss <<  name << ": " << *var;
     updateLabel( ss.str() );
-}
+  }
 
 };
     

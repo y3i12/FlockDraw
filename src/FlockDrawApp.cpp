@@ -155,20 +155,20 @@ void CinderApp::setup()
   m_gui->addColumn();
   m_helpPanel = m_gui->addPanel();
   
-  m_gui->addLabel( "Quick Help:"          );
-  m_gui->addLabel( "F1  to show/hide help" );
+  m_gui->addLabel( "Quick Help:"            );
+  m_gui->addLabel( "F1  to show/hide help"  );
 	m_gui->addLabel( "'h' to show/hide GUI"   );
   m_gui->addLabel( "'s' to save config"     );
   m_gui->addLabel( "'l' to load config"     );
   m_gui->addLabel( "'o' to open image"      );
-  m_gui->addLabel( "SPACE to skip image"  );
-  m_gui->addLabel( "ESC to quit"          );
+  m_gui->addLabel( "SPACE to skip image"    );
+  m_gui->addLabel( "ESC to quit"            );
   
   m_gui->addSeparator();
   m_gui->addSeparator();
 
-  m_gui->addLabel( "Drag multiple files"  );
-  m_gui->addLabel( "to slideshow!"        );
+  m_gui->addLabel( "Drag multiple files"    );
+  m_gui->addLabel( "to slideshow!"          );
   
   // load images passed via args
   if ( getArgs().size() > 1 )
@@ -263,6 +263,11 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
         fs::path aPath = getSaveFilePath( "", theExtensions );  
         if ( !aPath.empty() )
         {
+          if ( aPath.extension() != SGUI_CONFIG_FILE_EXT )
+          {
+            aPath.replace_extension( SGUI_CONFIG_FILE_EXT );
+          }
+
           m_gui->save( aPath.string() );
         } 
       }

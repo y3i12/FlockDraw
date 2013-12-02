@@ -5,8 +5,9 @@
 #include "cinder/Surface.h"
 #include "cinder/gl/Fbo.h"
 #include "cinder/Filesystem.h"
-#include "ParticleEmitter.h"
 #include "cinder/app/FileDropEvent.h"
+#include "cinder/ip/Resize.h"
+#include "ParticleEmitter.h"
 #include "SimpleGUI.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +18,7 @@ using namespace ci::app;
 using namespace std;
 using namespace mowa::sgui;
 
-#define SGUI_CONFIG_FILE "settings.sgui.txt"
+#define SGUI_CONFIG_FILE_EXT "cfg"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,11 +61,12 @@ public:
   int                         m_particleCount;
   int                         m_particleGroups;
   
-  bool                        m_hideGui;
   SimpleGUI*                  m_gui;
   ButtonControl*              m_openImageButton;
   ButtonControl*              m_nextImageButton;
   LabelControl*               m_currentImageLabel;
+	PanelControl*               m_mainPanel;
+	PanelControl*               m_helpPanel;
 
 private:
   double                      m_lastTime;
@@ -99,13 +101,13 @@ void CinderApp::setup()
   m_particleEmitter.m_particlesPerSecond = 0;
 
   // GUI
-  m_hideGui         = false;
   m_gui             = new SimpleGUI( this );
 	m_gui->lightColor = ColorA( 1, 1, 0, 1 );	
   m_gui->textFont   = Font( "Consolas", 12 );
+  m_gui->addColumn();
+  m_mainPanel = m_gui->addPanel();
 
-  m_gui->addLabel( "press 'h' to hide/show" );
-	m_gui->addSeparator();
+  // general settings
   m_gui->addLabel( "General Settings" );
 	m_gui->addParam( "Pic. Cycle Time", &m_cycleImageEvery,                       3.0f, 120.0f, 15.0f );
   m_gui->addParam( "Particle Size",   &m_particleEmitter.m_particleSizeRatio,   0.5f,   3.0f,  1.0f );
@@ -138,16 +140,35 @@ void CinderApp::setup()
   
   m_nextImageButton = m_gui->addButton( "Next Image" );
   m_nextImageButton->registerClick( this, &CinderApp::nextImageCallBack );
-  
-  // Image name
+
+  // some info
   m_gui->addSeparator();
   m_gui->addLabel( "Current Image:" );
-  m_currentImageLabel = m_gui->addLabel( ""  );
-  
+  m_currentImageLabel = m_gui->addLabel( "" );
+
   // deserved credits
   m_gui->addSeparator();
   m_gui->addLabel( "y3i12: Yuri Ivatchkovitch" );
   m_gui->addLabel( "http://y3i12.tumblr.com/"  );
+  
+  // Help!
+  m_gui->addColumn();
+  m_helpPanel = m_gui->addPanel();
+  
+  m_gui->addLabel( "Quick Help:"          );
+  m_gui->addLabel( "F1  to show/hide help" );
+	m_gui->addLabel( "'h' to show/hide GUI"   );
+  m_gui->addLabel( "'s' to save config"     );
+  m_gui->addLabel( "'l' to load config"     );
+  m_gui->addLabel( "'o' to open image"      );
+  m_gui->addLabel( "SPACE to skip image"  );
+  m_gui->addLabel( "ESC to quit"          );
+  
+  m_gui->addSeparator();
+  m_gui->addSeparator();
+
+  m_gui->addLabel( "Drag multiple files"  );
+  m_gui->addLabel( "to slideshow!"        );
   
   // load images passed via args
   if ( getArgs().size() > 1 )
@@ -215,16 +236,69 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 {
   switch( _event.getChar() ) 
   {				
-		case 'd': m_gui->dump();                   break; //prints values of all the controls to the console			
-		case 'l': m_gui->load( SGUI_CONFIG_FILE ); break;
-		case 's': m_gui->save( SGUI_CONFIG_FILE ); break;				
-    case 'h': m_hideGui = !m_hideGui;          break;
+		case 'd': 
+      {
+        m_gui->dump();
+      }
+      break; //prints values of all the controls to the console			
+
+		case 'l': 
+      {
+        std::vector< std::string > theExtensions;
+        theExtensions.push_back( SGUI_CONFIG_FILE_EXT );
+    
+        fs::path aPath = getOpenFilePath( "", theExtensions );  
+        if ( !aPath.empty() && fs::is_regular_file( aPath ) )
+        {
+          m_gui->load( aPath.string() );
+        } 
+      }
+      break;
+
+		case 's': 
+      {
+        std::vector< std::string > theExtensions;
+        theExtensions.push_back( SGUI_CONFIG_FILE_EXT );
+    
+        fs::path aPath = getSaveFilePath( "", theExtensions );  
+        if ( !aPath.empty() )
+        {
+          m_gui->save( aPath.string() );
+        } 
+      }
+      break;
+
+    case 'h': 
+      {
+        m_mainPanel->enabled = !m_mainPanel->enabled;
+      }
+
+    case 'o':
+      {
+        openImageCallBack( ci::app::MouseEvent() );
+      }
+      break;
 	}
 
 	switch(_event.getCode()) 
   {
-    case KeyEvent::KEY_ESCAPE: quit(); break;
-    case KeyEvent::KEY_SPACE:  nextImageCallBack( ci::app::MouseEvent() );
+    case KeyEvent::KEY_ESCAPE: 
+      {
+        quit(); 
+      }
+      break;
+
+    case KeyEvent::KEY_F1:     
+      {
+        m_helpPanel->enabled = !m_helpPanel->enabled; 
+      }
+      break;
+
+    case KeyEvent::KEY_SPACE:  
+      {
+        nextImageCallBack( ci::app::MouseEvent() );
+      }
+      break;
 	}
 }
 
@@ -239,7 +313,7 @@ bool CinderApp::openImageCallBack( ci::app::MouseEvent _event )
   m_files.clear();
 
   fs::path aPath = getOpenFilePath( "", theExtensions );  
-  if ( aPath.empty() || fs::is_regular_file( aPath ) )
+  if ( !aPath.empty() && fs::is_regular_file( aPath ) )
   {
     setImage( aPath, m_currentTime );
   }
@@ -271,8 +345,13 @@ void CinderApp::updateOutputArea( Vec2i& _imageSize )
 
 void CinderApp::setImage( fs::path& _path, double _currentTime )
 {
-  // load the image and set the texture
-  m_surface = loadImage( _path );
+  // load the image, resize and set the texture
+  ci::Surface imageLoaded = loadImage( _path );
+  Vec2i       aSize       = imageLoaded.getSize();
+  float       theFactor   = min( static_cast< float >( getWindowSize().x ) / aSize.x, static_cast< float >( getWindowSize().y ) / aSize.y );
+
+  m_surface = ci::Surface( static_cast< int >( aSize.x * theFactor ), static_cast< int >( aSize.y * theFactor ), false );
+  ci::ip::resize( imageLoaded, imageLoaded.getBounds(), &m_surface, m_surface.getBounds() );
   m_texture = m_surface;
   
   // update  the image name
@@ -351,11 +430,7 @@ void CinderApp::draw()
   gl::popMatrices();	
 
   // draw the UI
-  if ( !m_hideGui ) 
-  {
-    m_gui->draw();
-  }
-
+  m_gui->draw();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

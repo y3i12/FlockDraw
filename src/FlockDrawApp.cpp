@@ -278,6 +278,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
       {
         m_mainPanel->enabled = !m_mainPanel->enabled;
       }
+      break;
 
     case 'o':
       {
@@ -315,7 +316,6 @@ bool CinderApp::openImageCallBack( ci::app::MouseEvent _event )
   std::vector< std::string > theExtensions;
   theExtensions.push_back( "jpg" );
     
-  m_cycleCounter  = -1.0;
   m_files.clear();
 
   fs::path aPath = getOpenFilePath( "", theExtensions );  
@@ -323,6 +323,9 @@ bool CinderApp::openImageCallBack( ci::app::MouseEvent _event )
   {
     setImage( aPath, m_currentTime );
   }
+
+  m_cycleCounter  = -1.0;
+  
   return false;
 }
 
@@ -375,7 +378,7 @@ void CinderApp::setImage( fs::path& _path, double _currentTime )
   }
 
   // resets the cycle counter;
-  m_cycleCounter = -1.0;
+  m_cycleCounter = 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

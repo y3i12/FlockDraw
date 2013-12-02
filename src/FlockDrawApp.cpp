@@ -113,6 +113,7 @@ void CinderApp::setup()
   m_gui->addParam( "Particle Size",   &m_particleEmitter.m_particleSizeRatio,   0.5f,   3.0f,  1.0f );
   m_gui->addParam( "Particle Speed",  &m_particleEmitter.m_particleSpeedRatio,  0.2f,   3.0f,  1.0f );
   m_gui->addParam( "Dampness",        &m_particleEmitter.m_dampness,           0.01f,  0.99f,  0.9f );
+  m_gui->addParam( "Color Guidance",  &m_particleEmitter.m_colorRedirection,    0.0f,  20.0f,  5.0f );
 
 #ifdef _DEBUG
   m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    150   );

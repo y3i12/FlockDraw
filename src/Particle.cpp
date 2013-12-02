@@ -3,7 +3,8 @@
 #include "cinder/app/App.h"
 #include "ParticleEmitter.h"
 
-#define DEG_TO_RAD( x ) ( ( x ) * 0.017453292519943295769236907684886 )
+#define DEG_TO_RAD( x ) ( ( x ) * 0.017453292519943295769236907684886f )
+#define LUMINANCE( r, g, b ) ( 0.299f * ( r ) + 0.587f * ( g ) + 0.114 * ( b ) )
 
 Particle::Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _direction ) :
   m_position( _position ),
@@ -76,24 +77,31 @@ void Particle::update( double _currentTime, double _delta )
   //*
   if ( m_referenceSurface )
   {
-    ci::Vec2f tempDir = m_direction * 2.0f;
-    float     angle   = DEG_TO_RAD( 30 );
-    ci::Vec2f nextPos[ 3 ];
-    float     l[ 3 ];
-    
+    ci::Vec2f   tempDir = m_direction * 2.0f;
+    float       angle   = DEG_TO_RAD( 45 );
+    ci::Vec2f   nextPos[ 3 ];
+    float       l[ 3 ];
+    ci::ColorA  currentColor = m_referenceSurface->getPixel( m_position );
+
     nextPos[ 0 ] = m_position + tempDir;
     tempDir.rotate( angle );
     nextPos[ 1 ] = m_position + tempDir;
     tempDir.rotate( angle * -2.0f );
     nextPos[ 2 ] = m_position + tempDir;
     
+
     for ( int i = 0; i < 3; ++i )
     {
-      ci::ColorA c = m_referenceSurface->getPixel( nextPos[ i ] );
-      l[ i ] = ( 0.299f * c.r + 0.587f * c.g + 0.114 * c.b );
+      // to guide thru color
+      ci::ColorA c  = currentColor - m_referenceSurface->getPixel( nextPos[ i ] );
+      l[ i ]        = c.lengthSquared();
+      
+      // to guide thru luminance
+      // ci::ColorA c  = m_referenceSurface->getPixel( nextPos[ i ] );
+      // l[ i ] = LUMINANCE( c.r, c.g, c.b );
     }
     
-    angle   = DEG_TO_RAD( 1 );
+    angle = DEG_TO_RAD( m_owner->m_colorRedirection );
     
     if ( l[ 1 ] < l[ 0 ] )
     {
@@ -103,6 +111,7 @@ void Particle::update( double _currentTime, double _delta )
     {
       m_velocity.rotate( angle * -2.0f );
     }
+    
   }
   //*/
 }
@@ -144,7 +153,7 @@ void Particle::updateColorByRef()
   m_color.g = c.g;
   m_color.b = c.b;
   
-  m_radius = std::max< float >( 1.5f, m_maxRadius * ( 0.299f * m_color.r + 0.587f * m_color.g + 0.114 * m_color.b ) );
+  m_radius = std::max< float >( 1.5f, m_maxRadius * LUMINANCE( m_color.r, m_color.g, m_color.b ) );
 }
 
 void Particle::limitSpeed()

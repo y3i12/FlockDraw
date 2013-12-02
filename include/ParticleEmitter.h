@@ -55,6 +55,7 @@ public:
   float                   m_particleSizeRatio;
   float                   m_particleSpeedRatio;
   float                   m_dampness;
+  float                   m_colorRedirection;
 
 
 private:

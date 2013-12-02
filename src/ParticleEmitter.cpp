@@ -25,6 +25,7 @@ ParticleEmitter::ParticleEmitter(void) :
   m_particleSizeRatio( 1.0f ),
   m_particleSpeedRatio( 1.0f ),
   m_dampness( 0.9f ),
+  m_colorRedirection( 1.0f ),
 #if defined __USE_MATRIX_UPDATER__
   m_matrixUpdater( 75.0f, ci::Vec2f( 800.0f, 600.0f ) ),
 #endif

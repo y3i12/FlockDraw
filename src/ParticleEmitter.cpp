@@ -3,6 +3,7 @@
 #include "cinder/Rand.h"
 #include "cinder/app/App.h"
 #include "cinder/Vector.h"
+#include "Spatial2DGrid.h"
 
 #define PI  3.14159265359f
 #define PI2 6.28318530718f

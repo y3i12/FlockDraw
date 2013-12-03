@@ -9,6 +9,20 @@ class ParticleEmitter;
 class Particle
 {
 public:
+  struct PointAccessFunctor
+  {
+    static inline ci::Vec2f& position( Particle* p )
+    {
+      return p->m_position;
+    }
+
+    static inline ci::Vec2f& stable_position( Particle* p )
+    {
+      return p->m_stablePosition;
+    }
+  }; 
+
+public:
   Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _direction );
 
   virtual ~Particle( void );
@@ -27,6 +41,7 @@ protected:
 
 public:
   ci::Vec2f           m_position;
+  ci::Vec2f           m_stablePosition;
   ci::Vec2f           m_direction;
   ci::Vec2f           m_velocity;
   ci::Vec2f           m_acceleration;

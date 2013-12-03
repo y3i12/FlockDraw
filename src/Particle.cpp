@@ -8,6 +8,7 @@
 
 Particle::Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _direction ) :
   m_position( _position ),
+  m_stablePosition( _position ),
   m_direction( _direction ),
   m_color( 1.0f, 1.0f, 1.0f ),
   m_velocity( 0.0f, 0.0f ),

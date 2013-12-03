@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A2210E07-E8C3-442E-8652-A5B2B23DE0C7}</ProjectGuid>
-    <RootNamespace>FlockDraw</RootNamespace>
+    <ProjectGuid>{9AF5ED66-9126-4760-954B-3CF0E5892290}</ProjectGuid>
+    <RootNamespace>spatial_test</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -67,7 +67,7 @@
       <AdditionalDependencies>cinder_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>"\cinder\lib";"\cinder\lib\msw"</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
@@ -95,7 +95,7 @@
       <AdditionalLibraryDirectories>"\cinder\lib";"\cinder\lib\msw"</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding />
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -107,17 +107,9 @@
     <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\FlockDrawApp.cpp" />
-    <ClCompile Include="..\src\Particle.cpp" />
-    <ClCompile Include="..\src\ParticleEmitter.cpp" />
-    <ClCompile Include="..\src\SimpleGUI.cpp" />
+    <ClCompile Include="..\src\test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\matrixupdater.h" />
-    <ClInclude Include="..\include\Particle.h" />
-    <ClInclude Include="..\include\ParticleEmitter.h" />
-    <ClInclude Include="..\include\Resources.h" />
-    <ClInclude Include="..\include\SimpleGUI.h" />
     <ClInclude Include="..\include\Spatial2DGrid.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

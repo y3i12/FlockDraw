@@ -32,8 +32,15 @@ Particle::~Particle( void )
 
 void Particle::update( double _currentTime, double _delta )
 {
-  ci::Vec2f wrapSize = m_referenceSurface->getSize();
+  // update the speed
+  m_velocity += m_acceleration;
+  m_direction = m_velocity.normalized();
+  limitSpeed();
+  m_position += m_velocity * _delta * m_owner->m_particleSpeedRatio;
+  m_acceleration *= m_owner->m_dampness;
+
   // wrap the particle 
+  ci::Vec2f wrapSize = m_referenceSurface->getSize();
   if ( m_position.x < 0.0f )
   {
     m_position.x += wrapSize.x;
@@ -51,13 +58,6 @@ void Particle::update( double _currentTime, double _delta )
   {
     m_position.y -= wrapSize.y;
   }
-  
-  // update the speed
-  m_velocity += m_acceleration;
-  m_direction = m_velocity.normalized();
-  limitSpeed();
-  m_position += m_velocity * _delta * m_owner->m_particleSpeedRatio;
-  m_acceleration *= m_owner->m_dampness;
 
 
   if ( m_fadeInTime != 0.0f && _currentTime < m_fadeInTime )

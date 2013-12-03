@@ -15,9 +15,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\matrixupdater.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\Particle.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -31,6 +28,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Spatial2DGrid.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\FPSCounter.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

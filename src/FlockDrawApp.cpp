@@ -19,7 +19,15 @@ using namespace std;
 using namespace mowa::sgui;
 
 #define SGUI_CONFIG_FILE_EXT "cfg"
+#define SHOW_FPS
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined SHOW_FPS
+#include <sstream>
+#include "FPSCounter.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +80,12 @@ private:
   double                      m_lastTime;
   double                      m_currentTime;
   double                      m_cycleCounter;
+
+#if defined SHOW_FPS
+  LabelControl*               m_fps;
+  FPSCounter                  m_fpsCounter;
+  FPSCounter                  m_upsCounter;
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -171,6 +185,11 @@ void CinderApp::setup()
   m_gui->addLabel( "Drag multiple files"    );
   m_gui->addLabel( "to slideshow!"          );
   
+#if defined SHOW_FPS
+  m_gui->addColumn( 620, 5 );
+  m_fps = m_gui->addLabel( "" );
+#endif
+
   // load images passed via args
   if ( getArgs().size() > 1 )
   {
@@ -385,6 +404,10 @@ void CinderApp::update()
   m_currentTime = ci::app::getElapsedSeconds();
   double delta  = m_currentTime - m_lastTime;
 
+#if defined SHOW_FPS
+  m_upsCounter.update();
+#endif
+
   if ( m_cycleCounter != -1.0 )
   {
     m_cycleCounter += delta;
@@ -410,6 +433,14 @@ void CinderApp::update()
 
 void CinderApp::draw()
 {
+  
+#if defined SHOW_FPS
+  m_fpsCounter.update();
+  std::ostringstream oss;
+  oss << "fps: " << ( m_fpsCounter.get() ) << " / ups: " << ( m_upsCounter.get() );
+  m_fps->setText( oss.str() );
+#endif
+
 	// clear out the window with black and set gl confs
 	gl::clear( Color( 0.0f, 0.0f, 0.0f ) );
   gl::disableDepthRead();    

@@ -6,13 +6,14 @@
 #include "cinder/Surface.h"
 #include "cinder/gl/Texture.h"
 
-//#define #define __USE_MATRIX_UPDATER__
+#include "Particle.h"
 
-#if defined __USE_MATRIX_UPDATER__
-#include "matrixupdater.h"
+//#define __USE_SPATIAL_GRID__
+
+#if defined __USE_SPATIAL_GRID__
+#include "Spatial2DGrid.h"
 #endif
 
-class Particle;
 class b2World;
 
 class ParticleEmitter
@@ -58,11 +59,18 @@ public:
   float                   m_colorRedirection;
 
 
+
 private:
-#if defined __USE_MATRIX_UPDATER__
-  MatrixUpdater< Particle >  m_matrixUpdater;
+  void updateParticlesQuadratic( double _currentTime, double _delta );
+
+#if defined __USE_SPATIAL_GRID__
+  void updateParticlesSpatial( double _currentTime, double _delta );
+
+  typedef Spatial2DGrid< Particle, Particle::PointAccessFunctor > SpaceIndex;
+  SpaceIndex             m_grid;
+  
 #endif
-  float                      m_particlesPerSecondLeftOver;
+  float                  m_particlesPerSecondLeftOver;
 };
 
 #endif //__PARTICLE_EMITTER_H__

@@ -63,7 +63,7 @@ public:
     }
 
     // ctor for the end itr
-    iterator( typename Cell< T >* _cell ) :
+    iterator() :
       m_position( ),
       m_column( 0 ),
       m_row( 0 ),
@@ -132,11 +132,13 @@ public:
       m_cell            = _other.m_cell;
       m_cellIterator    = _other.m_cellIterator;
       m_iteratingCell   = _other.m_iteratingCell;
+
+      return *this;
     }
 
-    T& operator*()
+    T* operator*()
     {
-      return **m_cellIterator;
+      return *m_cellIterator;
     }
     
     T* operator->()
@@ -215,7 +217,7 @@ public:
   };
 
 public:
-  Spatial2DGrid( float _width, float _height, float _cellWidth, float _cellHeight, bool _wrapEdges = ture ) :
+  Spatial2DGrid( float _width, float _height, float _cellWidth, float _cellHeight, bool _wrapEdges = true ) :
     m_width( _width ),
     m_height( _height ),
     m_cellWidth( _cellWidth ),
@@ -227,9 +229,9 @@ public:
   {
     m_matrix = new typename Cell< T >[ m_cells ]();
     
-    for ( int column = 0; column < m_columns; ++column )
+    for ( int row = 0; row < m_rows; ++row )
     {
-      for ( int row = 0; row < m_columns; ++row )
+      for ( int column = 0; column < m_columns; ++column )
       {
         typename Cell< T >* targetCell = getCell( column, row );
 
@@ -256,7 +258,7 @@ public:
   
   void erase( typename T* _object )
   {
-    getCell( PosAccess::stable_x( _object ), PosAccess::stable_y( _object ) ).erase( _object );
+    getCell( PosAccess::stable_position( _object ) )->erase( _object );
   }
   
   typename Cell< T >* getCell( ci::Vec2f& _position )
@@ -279,8 +281,8 @@ public:
     if ( calcCellNumber( PosAccess::stable_position( _object ) ) != 
          calcCellNumber( PosAccess::position(        _object ) )   )
     {
-      erase( object );
-      insert( object );
+      erase( _object );
+      insert( _object );
     }
     else
     {

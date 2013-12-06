@@ -50,7 +50,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include;\cinder\include;\cinder\boost;\cinder\blocks\SimpleGUI\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;"\Cinder\include";"\Cinder\boost";\Cinder\blocks\CinderBox2D\src;\Cinder\blocks\SimpleGUI\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -61,11 +61,11 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>"\cinder\include";..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"\Cinder\include";..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>cinder_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"\cinder\lib";"\cinder\lib\msw"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"\Cinder\lib";"\Cinder\lib\msw"</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -76,7 +76,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\include;\cinder\include;\cinder\boost;\cinder\blocks\SimpleGUI\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;"\Cinder\include";"\Cinder\boost";\Cinder\blocks\CinderBox2D\src;\Cinder\blocks\SimpleGUI\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
@@ -88,11 +88,11 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>"\cinder\include";..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"\Cinder\include";..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>cinder.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"\cinder\lib";"\cinder\lib\msw"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"\Cinder\lib";"\Cinder\lib\msw"</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -110,15 +110,108 @@
     <ClCompile Include="..\src\FlockDrawApp.cpp" />
     <ClCompile Include="..\src\Particle.cpp" />
     <ClCompile Include="..\src\ParticleEmitter.cpp" />
-    <ClCompile Include="..\src\SimpleGUI.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2BroadPhase.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2CollideCircle.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2CollideEdge.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2CollidePolygon.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2Collision.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2Distance.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2DynamicTree.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2TimeOfImpact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2ChainShape.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2CircleShape.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2EdgeShape.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2PolygonShape.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2BlockAllocator.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Draw.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Math.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Settings.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2StackAllocator.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Timer.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2Body.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2ContactManager.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2Fixture.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2Island.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2World.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2WorldCallbacks.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2ChainAndCircleContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2ChainAndPolygonContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2CircleContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2Contact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2ContactSolver.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2EdgeAndCircleContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2EdgeAndPolygonContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2PolygonAndCircleContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2PolygonContact.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2DistanceJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2FrictionJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2GearJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2Joint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2MotorJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2MouseJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2PrismaticJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2PulleyJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2RevoluteJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2RopeJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2WeldJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2WheelJoint.cpp" />
+    <ClCompile Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Rope\cb2Rope.cpp" />
+    <ClCompile Include="\Cinder\blocks\SimpleGUI\src\SimpleGUI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\FPSCounter.h" />
     <ClInclude Include="..\include\Particle.h" />
     <ClInclude Include="..\include\ParticleEmitter.h" />
     <ClInclude Include="..\include\Resources.h" />
-    <ClInclude Include="..\include\SimpleGUI.h" />
     <ClInclude Include="..\include\Spatial2DGrid.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2BroadPhase.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2Collision.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2Distance.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2DynamicTree.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\cb2TimeOfImpact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2ChainShape.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2CircleShape.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2EdgeShape.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2PolygonShape.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Collision\Shapes\cb2Shape.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2BlockAllocator.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Draw.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2GrowableStack.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Math.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Settings.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2StackAllocator.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Common\cb2Timer.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2Body.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2ContactManager.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2Fixture.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2Island.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2TimeStep.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2World.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\cb2WorldCallbacks.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2ChainAndCircleContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2ChainAndPolygonContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2CircleContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2Contact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2ContactSolver.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2EdgeAndCircleContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2EdgeAndPolygonContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2PolygonAndCircleContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Contacts\cb2PolygonContact.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2DistanceJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2FrictionJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2GearJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2Joint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2MotorJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2MouseJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2PrismaticJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2PulleyJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2RevoluteJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2RopeJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2WeldJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Dynamics\Joints\cb2WheelJoint.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\Rope\cb2Rope.h" />
+    <ClInclude Include="\Cinder\blocks\CinderBox2D\src\CinderBox2D\CinderBox2d.h" />
+    <ClInclude Include="\Cinder\blocks\SimpleGUI\include\SimpleGUI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

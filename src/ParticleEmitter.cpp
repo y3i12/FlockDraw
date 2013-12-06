@@ -3,7 +3,6 @@
 #include "cinder/Rand.h"
 #include "cinder/app/App.h"
 #include "cinder/Vector.h"
-#include "Spatial2DGrid.h"
 
 #define PI  3.14159265359f
 #define PI2 6.28318530718f
@@ -27,9 +26,6 @@ ParticleEmitter::ParticleEmitter(void) :
   m_particleSpeedRatio( 1.0f ),
   m_dampness( 0.9f ),
   m_colorRedirection( 1.0f ),
-#if defined __USE_SPATIAL_GRID__
-  m_grid( 800.0f, 600.0f, 100.0f, 100.0f, true ),
-#endif
   m_particlesPerSecondLeftOver( 0.0f )
 {
 }
@@ -101,9 +97,6 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
     p->m_radius               = 5.0f;
 
     p->setup( );
-#if defined __USE_SPATIAL_GRID__
-    m_grid.insert( p );
-#endif
     m_particles.push_back( p );
   }
 }
@@ -133,11 +126,9 @@ void ParticleEmitter::update( double _currentTime, double _delta )
 
     m_particlesPerSecondLeftOver = particlesToEmit - particlesToEmmitInt;
   }
-#if !defined __USE_SPATIAL_GRID__
+
   updateParticlesQuadratic( _currentTime, _delta );
-#else
-  updateParticlesSpatial( _currentTime, _delta );
-#endif
+
 }
 
 void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _delta )
@@ -223,97 +214,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
   }
 }
 
-#if defined __USE_SPATIAL_GRID__
-void ParticleEmitter::updateParticlesSpatial( double _currentTime, double _delta )
-{
-  std::list< Particle* >::iterator itr     = m_particles.begin();
-  std::list< Particle* >::iterator itr_end = m_particles.end();
-  std::list< Particle* >::iterator itr2;
-  SpaceIndex::iterator             space_itr;
-  
-  // update the flocking routine
-  while ( itr != itr_end )
-  {
-    Particle* p1 = *itr;
-        
-    if ( p1->m_timeOfDeath <= _currentTime && p1->m_timeOfDeath != -1.0f )
-    {
-      itr2 = itr;
-      ++itr;
-      delete p1;
-      m_particles.erase( itr2 );
-      continue;
-    }
-         
-    space_itr = m_grid.lower_bound( p1->m_stablePosition );
 
-    do
-    {
-      Particle* p2 = *space_itr;
-      
-      if ( p2 == p1 )
-      {
-        continue;
-      }
-
-      ci::Vec2f dir      = p1->m_stablePosition - p2->m_stablePosition;
-      float     distSqrd = dir.lengthSquared();
-			
-			if( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
-      {			
-				float percent = distSqrd / m_zoneRadiusSqrd;
-	      
-        if ( p1->m_group == p2->m_group )
-        {
-				  if ( percent < m_lowThresh )			// Separation
-          {
-					  float F = ( m_lowThresh/percent - 1.0f ) * m_repelStrength;
-					  dir = dir.normalized() * F;
-			
-					  p1->m_acceleration += dir;
-				  } 
-          else if( percent < m_highThresh ) // Alignment
-          {	
-					  float threshDelta     = m_highThresh - m_lowThresh;
-					  float adjustedPercent	= ( percent - m_lowThresh )/threshDelta;
-					  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength;
-					
-					  p1->m_acceleration += p2->m_direction * F;
-				  } 
-          else 								// Cohesion
-          {
-					  float threshDelta     = 1.0f - m_highThresh;
-					  float adjustedPercent	= ( percent - m_highThresh )/threshDelta;
-					  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength;
-										
-					  dir.normalize();
-					  dir *= F;
-			
-					  p1->m_acceleration -= dir;
-				  }
-        }
-        else
-        {
-					float F = ( m_highThresh / percent - 1.0f ) * m_groupRepelStrength;
-					dir = dir.normalized() * F;
-			
-					p1->m_acceleration += dir;
-        }
-			}
-    }
-    while ( ++space_itr );
-    
-    ++itr;
-  }
-
-  for ( itr = m_particles.begin(); itr != itr_end; ++itr )
-  {
-    Particle* p = *itr;
-    p->update( _currentTime, _delta );
-    m_grid.update( p );
-  }
-}
-#endif
 
 void ParticleEmitter::killAll( double _currentTime )
 {

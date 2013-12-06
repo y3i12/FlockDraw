@@ -8,11 +8,6 @@
 
 #include "Particle.h"
 
-//#define __USE_SPATIAL_GRID__
-
-#if defined __USE_SPATIAL_GRID__
-#include "Spatial2DGrid.h"
-#endif
 
 class b2World;
 
@@ -63,13 +58,6 @@ public:
 private:
   void updateParticlesQuadratic( double _currentTime, double _delta );
 
-#if defined __USE_SPATIAL_GRID__
-  void updateParticlesSpatial( double _currentTime, double _delta );
-
-  typedef Spatial2DGrid< Particle, Particle::PointAccessFunctor > SpaceIndex;
-  SpaceIndex             m_grid;
-  
-#endif
   float                  m_particlesPerSecondLeftOver;
 };
 

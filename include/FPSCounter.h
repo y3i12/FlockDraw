@@ -11,7 +11,8 @@ public:
     m_fps( 0.0 ), 
     m_fpscount( 0.0 ),
     m_fpsinterval( 0.0 ),
-    m_lastTime( -1.0 )
+    m_lastTime( -1.0 ),
+    m_updated( false )
   {
   }
 
@@ -39,6 +40,7 @@ public:
       // reset the counter and the interval
       m_fpscount    = 0.0;
       m_fpsinterval = 0.0;
+      m_updated     = true;
     }
   }
 
@@ -48,12 +50,13 @@ public:
     return m_fps;
   }
   
+  bool   m_updated;
+
 protected:
   double m_fps;
   double m_fpscount;
   double m_fpsinterval;
   double m_lastTime;
-
 };
 
 #endif // __FPS_COUNTER_H__

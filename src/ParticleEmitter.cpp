@@ -11,8 +11,6 @@ ParticleEmitter::ParticleEmitter(void) :
   m_position( 0.0f, 0.0f ),
   m_maxLifeTime( 0.0f ),
   m_minLifeTime( 0.0f ),
-  m_fadeInTime( 0.0f ),
-  m_fadeOutTime( 0.0f ),
   m_particlesPerSecond( 0.0f ),
   m_zoneRadiusSqrd( 75.0f * 75.0f ),
   m_repelStrength( 0.04f ),
@@ -22,10 +20,6 @@ ParticleEmitter::ParticleEmitter(void) :
   m_lowThresh( 0.125f ),
   m_highThresh( 0.65f ),
   m_referenceSurface( 0 ),
-  m_particleSizeRatio( 1.0f ),
-  m_particleSpeedRatio( 1.0f ),
-  m_dampness( 0.9f ),
-  m_colorRedirection( 1.0f ),
   m_particlesPerSecondLeftOver( 0.0f )
 {
 }
@@ -43,10 +37,10 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
   if ( m_referenceSurface )
   {
     refSize = m_referenceSurface->getSize();
-    emissionArea.x1 = ci::randFloat( refSize.x - refSize.x * EMISSION_AREA_PERCENTAGE );
-    emissionArea.y1 = ci::randFloat( refSize.y - refSize.y * EMISSION_AREA_PERCENTAGE );
-    emissionArea.x2 = emissionArea.x1 + refSize.x * EMISSION_AREA_PERCENTAGE;
-    emissionArea.y2 = emissionArea.y1 + refSize.y * EMISSION_AREA_PERCENTAGE;
+    emissionArea.x1 = static_cast< int >( ci::randFloat( refSize.x - refSize.x * EMISSION_AREA_PERCENTAGE ) );
+    emissionArea.y1 = static_cast< int >( ci::randFloat( refSize.y - refSize.y * EMISSION_AREA_PERCENTAGE ) );
+    emissionArea.x2 = static_cast< int >( emissionArea.x1 + refSize.x * EMISSION_AREA_PERCENTAGE );
+    emissionArea.y2 = static_cast< int >( emissionArea.y1 + refSize.y * EMISSION_AREA_PERCENTAGE );
   }
   
   
@@ -63,8 +57,8 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
     if ( m_referenceSurface )
     {
       ci::Vec2f pos;
-      pos.x = ci::Rand::randFloat( emissionArea.x1, emissionArea.x2 );
-      pos.y = ci::Rand::randFloat( emissionArea.y1, emissionArea.y2 );
+      pos.x = ci::Rand::randFloat( static_cast< float >( emissionArea.x1 ), static_cast< float >( emissionArea.x2 ) );
+      pos.y = ci::Rand::randFloat( static_cast< float >( emissionArea.y1 ), static_cast< float >( emissionArea.y2 ) );
 
       p = new Particle( this, pos, ci::Vec2f( u, v ) );
       p->m_referenceSurface = m_referenceSurface;
@@ -72,19 +66,6 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
     else
     {
       p = new Particle( this, m_position, ci::Vec2f( u, v ) );
-    }
-    
-
-    if ( m_minLifeTime < m_maxLifeTime )
-    {
-      p->m_timeOfDeath   = p->m_spawnTime   + ci::Rand::randFloat( m_minLifeTime, m_maxLifeTime );
-      p->m_fadeOutTime   = p->m_timeOfDeath - m_fadeOutTime;
-      p->m_fadeInTime    = p->m_spawnTime   + m_fadeInTime;
-    }
-    else
-    {
-      p->m_fadeInTime  = p->m_spawnTime   + m_fadeInTime;
-      p->m_timeOfDeath = -1.0f;
     }
 
     p->m_maxSpeedSquared = ci::Rand::randFloat( 10, 50 );
@@ -94,17 +75,15 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
     p->m_acceleration.normalize();
     p->m_acceleration        *= 2.5f;
     p->m_group                = _group;
-    p->m_radius               = 5.0f;
-
-    p->setup( );
+    
     m_particles.push_back( p );
   }
 }
 
 void ParticleEmitter::draw( void )
 {
-  std::list< Particle* >::iterator itr     = m_particles.begin();
-  std::list< Particle* >::iterator itr_end = m_particles.end();
+  std::vector< Particle* >::iterator itr     = m_particles.begin();
+  std::vector< Particle* >::iterator itr_end = m_particles.end();
 
   for ( ; itr != itr_end; ++itr )
   {
@@ -116,7 +95,7 @@ void ParticleEmitter::update( double _currentTime, double _delta )
 {
   if ( m_particlesPerSecond )
   { 
-    float particlesToEmit     = _delta * m_particlesPerSecond + m_particlesPerSecondLeftOver;
+    float particlesToEmit     = static_cast< float >( _delta ) * m_particlesPerSecond + m_particlesPerSecondLeftOver;
     int   particlesToEmmitInt = static_cast< int >( particlesToEmit );
     
     if ( particlesToEmmitInt )
@@ -133,10 +112,11 @@ void ParticleEmitter::update( double _currentTime, double _delta )
 
 void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _delta )
 {
-  std::list< Particle* >::iterator itr     = m_particles.begin();
-  std::list< Particle* >::iterator itr_end = m_particles.end();
-  std::list< Particle* >::iterator itr2;
-  
+  std::vector< Particle* >::iterator itr     = m_particles.begin();
+  std::vector< Particle* >::iterator itr_end = m_particles.end();
+  std::vector< Particle* >::iterator itr2;
+  ci::Vec2f dir;
+
   // update the flocking routine
   while ( itr != itr_end )
   {
@@ -155,12 +135,11 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
     
     for( ++itr2; itr2 != itr_end; ++itr2 )
     {
-      Particle* p2             = *itr2;
-
-      ci::Vec2f dir             = p1->m_position - p2->m_position;
-      float     distSqrd        = dir.lengthSquared();
+      Particle* p2 = *itr2;
+      dir = p1->m_position - p2->m_position;
+      float distSqrd = dir.lengthSquared();
 			
-			if( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
+			if ( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
       {			
 				float percent = distSqrd/m_zoneRadiusSqrd;
 	      
@@ -168,7 +147,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
         {
 				  if( percent < m_lowThresh )			// Separation
           {
-					  float F = ( m_lowThresh/percent - 1.0f ) * m_repelStrength;
+					  float F = ( m_lowThresh / percent - 1.0f ) * m_repelStrength;
 					  dir = dir.normalized() * F;
 			
 					  p1->m_acceleration += dir;
@@ -218,9 +197,9 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
 
 void ParticleEmitter::killAll( double _currentTime )
 {
-  std::list< Particle* >::iterator itr     = m_particles.begin();
-  std::list< Particle* >::iterator itr_end = m_particles.end();
-  std::list< Particle* >::iterator itr2;
+  std::vector< Particle* >::iterator itr     = m_particles.begin();
+  std::vector< Particle* >::iterator itr_end = m_particles.end();
+  std::vector< Particle* >::iterator itr2;
 
   // update the flocking routine
   while ( itr != itr_end )

@@ -108,8 +108,6 @@ void CinderApp::setup()
   // emitter
   m_particleEmitter.m_maxLifeTime        = 0.0;
   m_particleEmitter.m_minLifeTime        = 10.0;
-  m_particleEmitter.m_fadeInTime         = 0.5f;
-  m_particleEmitter.m_fadeOutTime        = 3.0f;
   m_particleEmitter.m_referenceSurface   = &m_surface;
   m_particleEmitter.m_screenTexture      = &m_frameBufferObject.getTexture();
   m_particleEmitter.m_particlesPerSecond = 0;
@@ -123,18 +121,18 @@ void CinderApp::setup()
 
   // general settings
   m_gui->addLabel( "General Settings" );
-	m_gui->addParam( "Pic. Cycle Time", &m_cycleImageEvery,                       3.0f, 120.0f, 15.0f );
-  m_gui->addParam( "Particle Size",   &m_particleEmitter.m_particleSizeRatio,   0.5f,   3.0f,  1.0f );
-  m_gui->addParam( "Particle Speed",  &m_particleEmitter.m_particleSpeedRatio,  0.2f,   3.0f,  1.0f );
-  m_gui->addParam( "Dampness",        &m_particleEmitter.m_dampness,           0.01f,  0.99f,  0.9f );
-  m_gui->addParam( "Color Guidance",  &m_particleEmitter.m_colorRedirection,    0.0f,  20.0f,  5.0f );
+	m_gui->addParam( "Pic. Cycle Time", &m_cycleImageEvery,               3.0f, 120.0f, 15.0f );
+  m_gui->addParam( "Particle Size",   &Particle::s_particleSizeRatio,   0.5f,   3.0f,  1.0f );
+  m_gui->addParam( "Particle Speed",  &Particle::s_particleSpeedRatio,  0.2f,   3.0f,  1.0f );
+  m_gui->addParam( "Dampness",        &Particle::s_dampness,           0.01f,  0.99f,  0.9f );
+  m_gui->addParam( "Color Guidance",  &Particle::s_colorRedirection,    0.0f,  20.0f,  5.0f );
 
 #ifdef _DEBUG
-  m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    150   );
-  m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     2   );
+  m_gui->addParam( "#Particles", &m_particleCount,   50, 500, 150 );
+  m_gui->addParam( "#Groups",    &m_particleGroups,   1,  10,   2 );
 #else
-  m_gui->addParam( "#Particles", &m_particleCount,   50,   500,    300   );
-  m_gui->addParam( "#Groups",    &m_particleGroups,  1,    10,     5   );
+  m_gui->addParam( "#Particles", &m_particleCount,   50, 500, 300 );
+  m_gui->addParam( "#Groups",    &m_particleGroups,   1,  10,   5 );
 #endif
   
 	m_gui->addSeparator();
@@ -436,9 +434,13 @@ void CinderApp::draw()
   
 #if defined SHOW_FPS
   m_fpsCounter.update();
-  std::ostringstream oss;
-  oss << "fps: " << ( m_fpsCounter.get() ) << " / ups: " << ( m_upsCounter.get() );
-  m_fps->setText( oss.str() );
+  if ( m_fpsCounter.m_updated )
+  {
+    m_fpsCounter.m_updated = false;
+    std::ostringstream oss;
+    oss << "fps: " << ( m_fpsCounter.get() ) << " / ups: " << ( m_upsCounter.get() );
+    m_fps->setText( oss.str() );
+  }
 #endif
 
 	// clear out the window with black and set gl confs

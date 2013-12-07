@@ -1,7 +1,7 @@
 #if !defined __PARTICLE_EMITTER_H__
 #define __PARTICLE_EMITTER_H__
 
-#include <list>
+#include <vector>
 #include "cinder/Vector.h"
 #include "cinder/Surface.h"
 #include "cinder/gl/Texture.h"
@@ -24,37 +24,27 @@ public:
 
   virtual void killAll( double _currentTime );
 
-  std::list< Particle* >  m_particles;
-  ci::Vec2f               m_position;
-  double                  m_maxLifeTime;
-  double                  m_minLifeTime;
-
-  double                  m_fadeInTime;
-  double                  m_fadeOutTime;
-
-  float                   m_particlesPerSecond;
+  std::vector< Particle* > m_particles;
+  ci::Vec2f                m_position;
+  double                   m_maxLifeTime;
+  double                   m_minLifeTime;
+                           
+  float                    m_particlesPerSecond;
 
   // flocking vars
-  float                   m_zoneRadiusSqrd;
-  float                   m_repelStrength;
-  float                   m_alignStrength;
-  float                   m_attractStrength;
-  float                   m_groupRepelStrength;
-  float                   m_lowThresh;
-  float                   m_highThresh;
+  float                    m_zoneRadiusSqrd;
+  float                    m_repelStrength;
+  float                    m_alignStrength;
+  float                    m_attractStrength;
+  float                    m_groupRepelStrength;
+  float                    m_lowThresh;
+  float                    m_highThresh;
+                           
+  ci::Surface*             m_referenceSurface;
+  ci::gl::Texture*         m_screenTexture;
+  ci::Surface              m_screenSurface;
+
   
-  ci::Surface*            m_referenceSurface;
-  ci::gl::Texture*        m_screenTexture;
-  ci::Surface             m_screenSurface;
-
-  // particle tweak
-  float                   m_particleSizeRatio;
-  float                   m_particleSpeedRatio;
-  float                   m_dampness;
-  float                   m_colorRedirection;
-
-
-
 private:
   void updateParticlesQuadratic( double _currentTime, double _delta );
 

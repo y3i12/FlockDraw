@@ -1,55 +1,65 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Blocks">
+      <UniqueIdentifier>{217F00EC-CAF7-482F-9AC4-4A7C0F55F663}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Blocks\SimpleGUI">
+      <UniqueIdentifier>{EF336046-105C-4869-8330-E98BA5619302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Blocks\SimpleGUI\include">
+      <UniqueIdentifier>{6CF69E9B-8433-4C7B-BA9F-2674584EA2B4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Blocks\SimpleGUI\src">
+      <UniqueIdentifier>{B931523F-5626-4602-9CB8-302736C496C9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="..\src\FlockDrawApp.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Particle.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ParticleEmitter.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\SimpleGUI.cpp">
-      <Filter>Sources</Filter>
+    <ClInclude Include="..\include\Resources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="\Cinder\blocks\SimpleGUI\include\SimpleGUI.h">
+      <Filter>Blocks\SimpleGUI\include</Filter>
+    </ClInclude>
+    <ClCompile Include="\Cinder\blocks\SimpleGUI\src\SimpleGUI.cpp">
+      <Filter>Blocks\SimpleGUI\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\Particle.h">
-      <Filter>Headers</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ParticleEmitter.h">
-      <Filter>Headers</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Resources.h">
-      <Filter>Headers</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\SimpleGUI.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\Spatial2DGrid.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\FPSCounter.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Sources">
-      <UniqueIdentifier>{fe0ac208-b874-4a1e-87e9-653b63a56f7c}</UniqueIdentifier>
-      <Extensions>*.cpp</Extensions>
-    </Filter>
-    <Filter Include="Resources">
-      <UniqueIdentifier>{b38106b0-eeb8-4258-b634-088785e2927f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Headers">
-      <UniqueIdentifier>{da28b9c8-b601-49ed-a51d-a1a0ae8c1ebb}</UniqueIdentifier>
-      <Extensions>*.h</Extensions>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc">
-      <Filter>Resources</Filter>
+      <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
 </Project>

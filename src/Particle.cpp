@@ -3,14 +3,17 @@
 #include "cinder/app/App.h"
 #include "ParticleEmitter.h"
 
+#include <SimpleGUI.h>
+
 #define DEG_TO_RAD( x ) ( ( x ) * 0.017453292519943295769236907684886f )
 #define LUMINANCE( r, g, b ) ( 0.299f * ( r ) + 0.587f * ( g ) + 0.114f * ( b ) )
 
-float Particle::s_maxRadius          = 5.0f;
-float Particle::s_particleSizeRatio  = 1.0f;
-float Particle::s_particleSpeedRatio = 1.0f;
-float Particle::s_dampness           = 0.9f;
-float Particle::s_colorRedirection   = 1.0f;
+float  Particle::s_maxRadius          = 5.0f;
+float  Particle::s_particleSizeRatio  = 1.0f;
+float  Particle::s_particleSpeedRatio = 1.0f;
+float  Particle::s_dampness           = 0.9f;
+float  Particle::s_colorRedirection   = 1.0f;
+size_t Particle::s_idGenerator        = 0;
 
 Particle::Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _direction ) :
   m_position( _position ),
@@ -23,7 +26,8 @@ Particle::Particle( ParticleEmitter* _owner, ci::Vec2f& _position, ci::Vec2f& _d
   m_spawnTime( ci::app::getElapsedSeconds() ),
   m_timeOfDeath( -1.0 ),
   m_owner( _owner ),
-  m_group( -1 )
+  m_group( -1 ),
+  m_id( s_idGenerator++ )
 {
 }
 
@@ -37,8 +41,10 @@ void Particle::update( double _currentTime, double _delta )
   m_velocity += m_acceleration;
   m_direction = m_velocity.normalized();
   limitSpeed();
-  m_position     += m_velocity * static_cast< float >( _delta ) * Particle::s_particleSpeedRatio;
-  m_acceleration *= Particle::s_dampness;
+
+  // update the position
+  m_position += m_velocity * static_cast< float >( _delta ) * Particle::s_particleSpeedRatio;
+  m_velocity *= Particle::s_dampness;
 
   // wrap the particle 
   ci::Vec2f wrapSize = m_referenceSurface->getSize();
@@ -106,10 +112,30 @@ void Particle::draw( void )
   t_sourceArea.y2 = static_cast< int >( m_position.y + Particle::s_maxRadius );
 
   t_color      = m_referenceSurface->areaAverage( t_sourceArea );
-  float radius = std::max< float >( 1.0f, Particle::s_maxRadius * LUMINANCE( t_color.r, t_color.g, t_color.b ) ) * Particle::s_particleSizeRatio;
+  float radius = ( 1.0f + Particle::s_maxRadius * LUMINANCE( t_color.r, t_color.g, t_color.b ) ) * Particle::s_particleSizeRatio;
 
   ci::gl::color( t_color );
-  ci::gl::drawSolidCircle( m_position + m_owner->m_position, radius, std::max< int >( 3, static_cast< int >( radius * radius ) ) );
+  ci::gl::drawSolidCircle( m_position + m_owner->m_position, radius );
+}
+void Particle::debugDraw( void )
+{
+  if ( ParticleEmitter::s_debugDraw )
+  {
+    float zoneRadius = sqrt( m_owner->m_zoneRadiusSqrd );
+    ci::Vec2f pos    = m_position + m_owner->m_position;
+
+    ci::gl::color( 1.0f, 1.0f, 1.0f, 0.5f );
+    ci::gl::drawStrokedCircle( pos, zoneRadius );
+
+    ci::gl::color( 1.0f, 1.0f, 0.0f, 0.5f );
+    ci::gl::drawStrokedCircle( pos, zoneRadius * m_owner->m_highThresh );
+
+    ci::gl::color( 1.0f, 0.0f, 1.0f, 0.5f );
+    ci::gl::drawStrokedCircle( pos, zoneRadius * m_owner->m_lowThresh );
+
+    ci::gl::color( 1.0f, 1.0f, 1.0f, 1.0f );
+    sgui::SimpleGUI::textureFont->drawString( boost::lexical_cast< std::string >( m_id ), pos + ci::Vec2f( 5.0f, 5.0f ) );
+  }
 }
 
 void Particle::limitSpeed()

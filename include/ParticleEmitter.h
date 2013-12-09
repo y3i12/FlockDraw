@@ -18,8 +18,9 @@ public:
   virtual ~ParticleEmitter( void );
 
   void addParticles( int _aumont, int _group = -1 );
-
+  
   virtual void draw( void );
+  virtual void debugDraw( void );
   virtual void update( double _currentTime, double _delta );
 
   virtual void killAll( double _currentTime );
@@ -44,11 +45,14 @@ public:
   ci::gl::Texture*         m_screenTexture;
   ci::Surface              m_screenSurface;
 
-  
+  static bool              s_debugDraw;
 private:
   void updateParticlesQuadratic( double _currentTime, double _delta );
 
   float                  m_particlesPerSecondLeftOver;
+  double                 m_updateFlockEvery;
+  double                 m_updateFlockTimer;
+  double                 m_lastFlockUpdateTime;
 };
 
 #endif //__PARTICLE_EMITTER_H__

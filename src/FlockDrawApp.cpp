@@ -13,11 +13,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-using namespace ci;
-using namespace ci::app;
-using namespace std;
-using namespace mowa::sgui;
-
 #define SGUI_CONFIG_FILE_EXT "cfg"
 #define SHOW_FPS
 
@@ -29,10 +24,12 @@ using namespace mowa::sgui;
 #include "FPSCounter.h"
 #endif
 
+#define DEBUG_DRAW
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-class CinderApp : public AppNative 
+class CinderApp : public ci::app::AppNative 
 {
 public:
 	void setup();
@@ -49,32 +46,32 @@ public:
   bool nextImageCallBack();
   
 	// misc routines
-  void updateOutputArea( Vec2i& _imageSize );
-  void setImage( fs::path& _path, double _currentTime = 0.0 );
+  void updateOutputArea( ci::Vec2i& _imageSize );
+  void setImage( ci::fs::path& _path, double _currentTime = 0.0 );
 
   // main routines
   void update();
 	void draw();
-  void prepareSettings( Settings *settings );
+  void prepareSettings( ci::app::AppBasic::Settings *settings );
 
 
   // properties
-  Surface                     m_surface;
-  gl::Texture                 m_texture;
-  Area                        m_outputArea;
+  ci::Surface                 m_surface;
+  ci::gl::Texture             m_texture;
+  ci::Area                    m_outputArea;
   ParticleEmitter             m_particleEmitter;
-  gl::Fbo                     m_frameBufferObject;
+  ci::gl::Fbo                 m_frameBufferObject;
   std::vector< ci::fs::path > m_files;
   double                      m_cycleImageEvery;
   int                         m_particleCount;
   int                         m_particleGroups;
   
-  SimpleGUI*                  m_gui;
-  ButtonControl*              m_openImageButton;
-  ButtonControl*              m_nextImageButton;
-  LabelControl*               m_currentImageLabel;
-	PanelControl*               m_mainPanel;
-	PanelControl*               m_helpPanel;
+  sgui::SimpleGUI*            m_gui;
+  sgui::ButtonControl*        m_openImageButton;
+  sgui::ButtonControl*        m_nextImageButton;
+  sgui::LabelControl*         m_currentImageLabel;
+	sgui::PanelControl*         m_mainPanel;
+	sgui::PanelControl*         m_helpPanel;
 
 private:
   double                      m_lastTime;
@@ -82,7 +79,7 @@ private:
   double                      m_cycleCounter;
 
 #if defined SHOW_FPS
-  LabelControl*               m_fps;
+  sgui::LabelControl*         m_fps;
   FPSCounter                  m_fpsCounter;
   FPSCounter                  m_upsCounter;
 #endif
@@ -99,10 +96,12 @@ void CinderApp::setup()
   m_particleGroups  = 0;
 
   // buffer for trails
-  m_frameBufferObject = gl::Fbo( 800, 600, true );
+  ci::Vec2i      displaySz = getWindowSize(); 
+
+  m_frameBufferObject = ci::gl::Fbo( displaySz.x, displaySz.y, true );
   m_frameBufferObject.bindFramebuffer();
-  gl::enableAlphaBlending();
-  gl::clear( Color( 0.0f, 0.0f, 0.0f ) ); 
+  ci::gl::enableAlphaBlending();
+  ci::gl::clear( ci::Color( 0.0f, 0.0f, 0.0f ) ); 
   m_frameBufferObject.unbindFramebuffer();
 
   // emitter
@@ -113,9 +112,9 @@ void CinderApp::setup()
   m_particleEmitter.m_particlesPerSecond = 0;
 
   // GUI
-  m_gui             = new SimpleGUI( this );
-	m_gui->lightColor = ColorA( 1, 1, 0, 1 );	
-  m_gui->textFont   = Font( "Consolas", 12 );
+  m_gui             = new sgui::SimpleGUI( this );
+	m_gui->lightColor = ci::ColorA( 1, 1, 0, 1 );	
+  m_gui->textFont   = ci::Font( "Consolas", 12 );
   m_gui->addColumn();
   m_mainPanel = m_gui->addPanel();
 
@@ -128,19 +127,20 @@ void CinderApp::setup()
   m_gui->addParam( "Color Guidance",  &Particle::s_colorRedirection,    0.0f,  20.0f,  5.0f );
 
 #ifdef _DEBUG
-  m_gui->addParam( "#Particles", &m_particleCount,   50, 500, 150 );
-  m_gui->addParam( "#Groups",    &m_particleGroups,   1,  10,   2 );
+  m_gui->addParam( "#Particles", &m_particleCount,   50, 1000, 500 );
+  m_gui->addParam( "#Groups",    &m_particleGroups,   1,   20,   5  );
 #else
-  m_gui->addParam( "#Particles", &m_particleCount,   50, 500, 300 );
-  m_gui->addParam( "#Groups",    &m_particleGroups,   1,  10,   5 );
+  int ptcs = std::min< int >( static_cast< int >( displaySz.x * 0.625f ), 1000 );
+  m_gui->addParam( "#Particles", &m_particleCount,   50, 1000, ptcs );
+  m_gui->addParam( "#Groups",    &m_particleGroups,   1,   20,    5 );
 #endif
   
 	m_gui->addSeparator();
   m_gui->addLabel( "Flocking Settings" );
     
-  m_gui->addParam( "Repel Str.",      &m_particleEmitter.m_repelStrength,       0.000f,     0.5f,   0.04f );
-  m_gui->addParam( "Align Str.",      &m_particleEmitter.m_alignStrength,       0.000f,     0.5f,   0.04f );
-  m_gui->addParam( "Att. Str.",       &m_particleEmitter.m_attractStrength,     0.000f,     0.5f,   0.02f );
+  m_gui->addParam( "Repel Str.",      &m_particleEmitter.m_repelStrength,       0.000f,     10.0f,   2.0f );
+  m_gui->addParam( "Align Str.",      &m_particleEmitter.m_alignStrength,       0.000f,     10.0f,   2.0f );
+  m_gui->addParam( "Att. Str.",       &m_particleEmitter.m_attractStrength,     0.000f,     10.0f,   1.0f );
   m_gui->addParam( "Grp. Repel Str.", &m_particleEmitter.m_groupRepelStrength,  0.000f,     0.5f,   0.01f );
   m_gui->addParam( "Area Size",       &m_particleEmitter.m_zoneRadiusSqrd,      625.0f, 10000.0f, 5625.0f ),
   m_gui->addParam( "Repel Area",      &m_particleEmitter.m_lowThresh,             0.0f,     1.0f,  0.125f );
@@ -195,7 +195,7 @@ void CinderApp::setup()
 
     for ( size_t i = 1; i < args.size(); ++i )
     {
-      m_files.push_back( fs::canonical( fs::path( args[ i ] ) ) );
+      m_files.push_back( ci::fs::canonical( ci::fs::path( args[ i ] ) ) );
     }
 
     setImage( m_files.front(), m_currentTime );
@@ -250,20 +250,23 @@ void CinderApp::fileDrop ( ci::app::FileDropEvent _event )
 void CinderApp::keyDown( ci::app::KeyEvent _event )
 {
   switch( _event.getChar() ) 
-  {				
+  {	
+#if defined DEBUG_DRAW
 		case 'd': 
       {
-        m_gui->dump();
+        ParticleEmitter::s_debugDraw = !ParticleEmitter::s_debugDraw;
+        m_particleEmitter.killAll( -1 );
+        m_particleEmitter.addParticles( 10, 1 );
       }
       break; //prints values of all the controls to the console			
-
+#endif
 		case 'l': 
       {
         std::vector< std::string > theExtensions;
         theExtensions.push_back( SGUI_CONFIG_FILE_EXT );
     
-        fs::path aPath = getOpenFilePath( "", theExtensions );  
-        if ( !aPath.empty() && fs::is_regular_file( aPath ) )
+        ci::fs::path aPath = getOpenFilePath( "", theExtensions );  
+        if ( !aPath.empty() && ci::fs::is_regular_file( aPath ) )
         {
           m_gui->load( aPath.string() );
         } 
@@ -275,7 +278,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
         std::vector< std::string > theExtensions;
         theExtensions.push_back( SGUI_CONFIG_FILE_EXT );
     
-        fs::path aPath = getSaveFilePath( "", theExtensions );  
+        ci::fs::path aPath = getSaveFilePath( "", theExtensions );  
         if ( !aPath.empty() )
         {
           if ( aPath.extension() != SGUI_CONFIG_FILE_EXT )
@@ -303,23 +306,23 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 
 	switch(_event.getCode()) 
   {
-    case KeyEvent::KEY_ESCAPE: 
-      {
-        quit(); 
-      }
-      break;
+  case ci::app::KeyEvent::KEY_ESCAPE: 
+    {
+      quit(); 
+    }
+    break;
 
-    case KeyEvent::KEY_F1:     
-      {
-        m_helpPanel->enabled = !m_helpPanel->enabled; 
-      }
-      break;
+  case ci::app::KeyEvent::KEY_F1:     
+    {
+      m_helpPanel->enabled = !m_helpPanel->enabled; 
+    }
+    break;
 
-    case KeyEvent::KEY_SPACE:  
-      {
-        nextImageCallBack();
-      }
-      break;
+  case ci::app::KeyEvent::KEY_SPACE:  
+    {
+      nextImageCallBack();
+    }
+    break;
 	}
 }
 
@@ -332,8 +335,8 @@ bool CinderApp::openImageCallBack()
     
   m_files.clear();
 
-  fs::path aPath = getOpenFilePath( "", theExtensions );  
-  if ( !aPath.empty() && fs::is_regular_file( aPath ) )
+  ci::fs::path aPath = getOpenFilePath( "", theExtensions );  
+  if ( !aPath.empty() && ci::fs::is_regular_file( aPath ) )
   {
     setImage( aPath, m_currentTime );
   }
@@ -353,7 +356,7 @@ bool CinderApp::nextImageCallBack()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CinderApp::updateOutputArea( Vec2i& _imageSize )
+void CinderApp::updateOutputArea( ci::Vec2i& _imageSize )
 {
     m_outputArea.x1 = m_outputArea.x2 = static_cast< int >( getWindowCenter().x );
     m_outputArea.y1 = m_outputArea.y2 = static_cast< int >( getWindowCenter().y );
@@ -363,15 +366,15 @@ void CinderApp::updateOutputArea( Vec2i& _imageSize )
     m_outputArea.y1 -= _imageSize.y / 2;
     m_outputArea.y2 += _imageSize.y / 2;
 
-    m_particleEmitter.m_position = Vec2f( static_cast< float >( m_outputArea.x1 ), static_cast< float >( m_outputArea.y1 ) );
+    m_particleEmitter.m_position = ci::Vec2f( static_cast< float >( m_outputArea.x1 ), static_cast< float >( m_outputArea.y1 ) );
 }
 
-void CinderApp::setImage( fs::path& _path, double _currentTime )
+void CinderApp::setImage( ci::fs::path& _path, double _currentTime )
 {
   // load the image, resize and set the texture
-  ci::Surface imageLoaded = loadImage( _path );
-  Vec2i       aSize       = imageLoaded.getSize();
-  float       theFactor   = min( static_cast< float >( getWindowSize().x ) / aSize.x, static_cast< float >( getWindowSize().y ) / aSize.y );
+  ci::Surface imageLoaded = ci::loadImage( _path );
+  ci::Vec2i   aSize       = imageLoaded.getSize();
+  float       theFactor   = ci::math< float >::min( static_cast< float >( getWindowSize().x ) / aSize.x, static_cast< float >( getWindowSize().y ) / aSize.y );
 
   m_surface = ci::Surface( static_cast< int >( aSize.x * theFactor ), static_cast< int >( aSize.y * theFactor ), false );
   ci::ip::resize( imageLoaded, imageLoaded.getBounds(), &m_surface, m_surface.getBounds() );
@@ -444,29 +447,37 @@ void CinderApp::draw()
 #endif
 
 	// clear out the window with black and set gl confs
-	gl::clear( Color( 0.0f, 0.0f, 0.0f ) );
-  gl::disableDepthRead();    
-  gl::pushMatrices();
-  gl::translate( Vec3f( 0.0f, 0.0f, 0.0f ) );
+	ci::gl::clear( ci::Color( 0.0f, 0.0f, 0.0f ) );
+  ci::gl::disableDepthRead();    
+  ci::gl::pushMatrices();
+  ci::gl::translate( ci::Vec3f( 0.0f, 0.0f, 0.0f ) );
+
 
   // writes backed up frame buffer to the screen
   m_frameBufferObject.blitToScreen( getWindowBounds(), getWindowBounds() );
   
   // darkens the BG
-  gl::enableAlphaBlending();
-  gl::color( 0.0f, 0.0f, 0.0f, 0.01f ); 
-  gl::drawSolidRect( getWindowBounds() );
+  ci::gl::enableAlphaBlending();
+  ci::gl::color( 0.0f, 0.0f, 0.0f, 0.01f ); 
+  ci::gl::drawSolidRect( getWindowBounds() );
+
 
   // do the drawing =D
   m_particleEmitter.draw();
     
-  // save what happened to the framebuffer
-  m_frameBufferObject.blitFromScreen( getWindowBounds(), getWindowBounds() );
+
+    // save what happened to the framebuffer
+  m_frameBufferObject.blitFromScreen( getWindowBounds(), getWindowBounds() );  
+
+  if ( ParticleEmitter::s_debugDraw )
+  {
+    m_particleEmitter.debugDraw();
+  }
    
   // reset gl confs
-  gl::enableDepthRead();    
-  gl::disableAlphaBlending();
-  gl::popMatrices();	
+  ci::gl::enableDepthRead();    
+  ci::gl::disableAlphaBlending();
+  ci::gl::popMatrices();	
 
   // draw the UI
   m_gui->draw();
@@ -476,14 +487,25 @@ void CinderApp::draw()
 
 void CinderApp::prepareSettings( Settings *settings )
 {
+#if defined _DEBUG
   settings->setWindowSize( 800, 600 );
+#else
+  // set the window size and etc.
+  ci::DisplayRef display   = settings->getDisplay();
+  ci::Vec2i      displaySz = display->getSize(); 
+
+  settings->setWindowSize( displaySz.x, displaySz.y );
+  settings->setBorderless( true );
+  settings->setFullScreen( true );
+#endif
+  
   settings->setFrameRate( 60.0f );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-CINDER_APP_NATIVE( CinderApp, RendererGl )
+CINDER_APP_NATIVE( CinderApp, ci::app::RendererGl )
   
 ////////////////////////////////////////////////////////////////////////////////
 

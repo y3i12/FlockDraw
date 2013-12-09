@@ -7,6 +7,8 @@
 #define PI  3.14159265359f
 #define PI2 6.28318530718f
 
+bool ParticleEmitter::s_debugDraw = false;
+
 ParticleEmitter::ParticleEmitter(void) :
   m_position( 0.0f, 0.0f ),
   m_maxLifeTime( 0.0f ),
@@ -20,7 +22,10 @@ ParticleEmitter::ParticleEmitter(void) :
   m_lowThresh( 0.125f ),
   m_highThresh( 0.65f ),
   m_referenceSurface( 0 ),
-  m_particlesPerSecondLeftOver( 0.0f )
+  m_particlesPerSecondLeftOver( 0.0f ),
+  m_updateFlockEvery( 0.1 ),
+  m_updateFlockTimer( 0.0 ),
+  m_lastFlockUpdateTime( 0.0 )
 {
 }
 
@@ -91,8 +96,25 @@ void ParticleEmitter::draw( void )
   }
 }
 
+void ParticleEmitter::debugDraw( void )
+{
+  std::vector< Particle* >::iterator itr     = m_particles.begin();
+  std::vector< Particle* >::iterator itr_end = m_particles.end();
+
+  for ( ; itr != itr_end; ++itr )
+  {
+    ( *itr )->debugDraw();
+  }
+}
+
 void ParticleEmitter::update( double _currentTime, double _delta )
 {
+  if ( m_lastFlockUpdateTime == 0.0 )
+  {
+    m_lastFlockUpdateTime = _currentTime - m_updateFlockEvery;
+    m_updateFlockTimer    = m_updateFlockEvery;
+  }
+
   if ( m_particlesPerSecond )
   { 
     float particlesToEmit     = static_cast< float >( _delta ) * m_particlesPerSecond + m_particlesPerSecondLeftOver;
@@ -106,87 +128,100 @@ void ParticleEmitter::update( double _currentTime, double _delta )
     m_particlesPerSecondLeftOver = particlesToEmit - particlesToEmmitInt;
   }
 
+  m_updateFlockTimer += _delta;
   updateParticlesQuadratic( _currentTime, _delta );
 
 }
 
 void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _delta )
 {
-  std::vector< Particle* >::iterator itr     = m_particles.begin();
-  std::vector< Particle* >::iterator itr_end = m_particles.end();
-  std::vector< Particle* >::iterator itr2;
+  size_t itr     = 0;
+  size_t itr_end = m_particles.size();
+  size_t itr2;
+  bool   updateFlock = false;
+  float  updateRatio = 0.0f;
   ci::Vec2f dir;
+  
+  if ( m_updateFlockTimer >= m_updateFlockEvery )
+  {
+    m_updateFlockTimer    = 0.0;
+    updateRatio           = static_cast< float >( _currentTime - m_lastFlockUpdateTime ) / m_updateFlockEvery;
+    m_lastFlockUpdateTime = _currentTime;
+    updateFlock           = true;
+  }
 
   // update the flocking routine
-  while ( itr != itr_end )
+  while ( itr < itr_end )
   {
-    Particle* p1 = *itr;
+    Particle* p1 = m_particles[ itr ];
         
     if ( p1->m_timeOfDeath <= _currentTime && p1->m_timeOfDeath != -1.0f )
     {
-      itr2 = itr;
-      ++itr;
+      --itr_end;
       delete p1;
-      m_particles.erase( itr2 );
+      m_particles.erase( m_particles.begin() + itr );
       continue;
     }
-         
-    itr2 = itr;
     
-    for( ++itr2; itr2 != itr_end; ++itr2 )
+    if ( updateFlock )
     {
-      Particle* p2 = *itr2;
-      dir = p1->m_position - p2->m_position;
-      float distSqrd = dir.lengthSquared();
-			
-			if ( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
-      {			
-				float percent = distSqrd/m_zoneRadiusSqrd;
-	      
-        if ( p1->m_group == p2->m_group )
-        {
-				  if( percent < m_lowThresh )			// Separation
+      itr2 = itr;
+      
+      for( ++itr2; itr2 != itr_end; ++itr2 )
+      {
+        Particle* p2 = m_particles[ itr2 ];
+        dir = p1->m_position - p2->m_position;
+        float distSqrd = dir.lengthSquared();
+		  	
+		  	if ( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
+        {			
+		  		float percent = distSqrd/m_zoneRadiusSqrd;
+	        
+          if ( p1->m_group == p2->m_group )
           {
-					  float F = ( m_lowThresh / percent - 1.0f ) * m_repelStrength;
-					  dir = dir.normalized() * F;
-			
-					  p1->m_acceleration += dir;
-					  p2->m_acceleration -= dir;
-				  } 
-          else if( percent < m_highThresh ) // Alignment
-          {	
-					  float threshDelta     = m_highThresh - m_lowThresh;
-					  float adjustedPercent	= ( percent - m_lowThresh )/threshDelta;
-					  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength;
-					
-					  p1->m_acceleration += p2->m_direction * F;
-					  p2->m_acceleration += p1->m_direction * F;
-					
-				  } 
-          else 								// Cohesion
+		  		  if( percent < m_lowThresh )			// Separation
+            {
+		  			  float F = m_lowThresh * m_repelStrength * updateRatio;
+		  			  dir = dir.normalized() * F;
+		  	
+		  			  p1->m_acceleration += dir;
+		  			  p2->m_acceleration -= dir;
+		  		  } 
+            else if( percent < m_highThresh ) // Alignment
+            {	
+		  			  float threshDelta     = m_highThresh - m_lowThresh;
+		  			  float adjustedPercent	= ( percent - m_lowThresh )/threshDelta;
+		  			  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength * updateRatio;
+		  			
+		  			  p1->m_acceleration += p2->m_direction * F;
+		  			  p2->m_acceleration += p1->m_direction * F;
+		  			
+		  		  } 
+            else 								// Cohesion
+            {
+		  			  float threshDelta     = 1.0f - m_highThresh;
+		  			  float adjustedPercent	= ( percent - m_highThresh )/threshDelta;
+		  			  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength * updateRatio;
+		  								
+		  			  dir.normalize();
+		  			  dir *= F;
+		  	
+		  			  p1->m_acceleration -= dir;
+		  			  p2->m_acceleration += dir;
+		  		  }
+          }
+          else
           {
-					  float threshDelta     = 1.0f - m_highThresh;
-					  float adjustedPercent	= ( percent - m_highThresh )/threshDelta;
-					  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength;
-										
-					  dir.normalize();
-					  dir *= F;
-			
-					  p1->m_acceleration -= dir;
-					  p2->m_acceleration += dir;
-				  }
-        }
-        else
-        {
-					float F = ( m_highThresh / percent - 1.0f ) * m_groupRepelStrength;
-					dir = dir.normalized() * F;
-			
-					p1->m_acceleration += dir;
-					p2->m_acceleration -= dir;
-        }
-			}
+		  			float F = ( m_highThresh / percent - 1.0f ) * m_groupRepelStrength * updateRatio;
+		  			dir = dir.normalized() * F;
+		  	
+		  			p1->m_acceleration += dir;
+		  			p2->m_acceleration -= dir;
+          }
+		  	}
+      }
     }
-    
+
     p1->update( _currentTime, _delta );
 
     ++itr;

@@ -29,6 +29,7 @@ public:
 
   virtual void update( double _currentTime, double _delta );
   virtual void draw( void );
+  virtual void debugDraw( void );
   
   ci::Vec2f&   position() { return m_position; }
 
@@ -74,6 +75,10 @@ private:
   float               t_l[ 3 ];
   ci::ColorA          t_currentColor;
   ci::ColorA          t_c;
+
+  size_t              m_id;
+  static size_t       s_idGenerator;
+
 
 };
 

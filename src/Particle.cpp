@@ -39,6 +39,7 @@ void Particle::update( double _currentTime, double _delta )
 {
   // update the speed
   m_velocity += m_acceleration;
+  m_acceleration.normalize();
   m_direction = m_velocity.normalized();
   limitSpeed();
 

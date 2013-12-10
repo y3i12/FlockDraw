@@ -181,6 +181,11 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
           {
 		  		  if( percent < m_lowThresh )			// Separation
             {
+              if ( m_repelStrength < 0.0001f )
+              {
+                continue;
+              }
+
 		  			  float F = m_lowThresh * m_repelStrength * updateRatio;
 		  			  dir = dir.normalized() * F;
 		  	
@@ -189,8 +194,13 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
 		  		  } 
             else if( percent < m_highThresh ) // Alignment
             {	
+              if ( m_alignStrength < 0.0001f )
+              {
+                continue;
+              }
+
 		  			  float threshDelta     = m_highThresh - m_lowThresh;
-		  			  float adjustedPercent	= ( percent - m_lowThresh )/threshDelta;
+		  			  float adjustedPercent	= ( percent - m_lowThresh ) / threshDelta;
 		  			  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength * updateRatio;
 		  			
 		  			  p1->m_acceleration += p2->m_direction * F;
@@ -199,6 +209,11 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
 		  		  } 
             else 								// Cohesion
             {
+              if ( m_attractStrength < 0.0001f )
+              {
+                continue;
+              }
+
 		  			  float threshDelta     = 1.0f - m_highThresh;
 		  			  float adjustedPercent	= ( percent - m_highThresh )/threshDelta;
 		  			  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength * updateRatio;
@@ -210,7 +225,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
 		  			  p2->m_acceleration += dir;
 		  		  }
           }
-          else
+          else if ( m_groupRepelStrength > 0.0001f )
           {
 		  			float F = ( m_highThresh / percent - 1.0f ) * m_groupRepelStrength * updateRatio;
 		  			dir = dir.normalized() * F;

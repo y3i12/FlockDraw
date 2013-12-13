@@ -68,7 +68,7 @@ public:
 private:
   // temporary variables to avoid construction every update
   ci::Area            t_sourceArea;
-  ci::Color           t_color;
+  ci::ColorA          t_color;
   ci::Vec2f           t_tempDir;
   float               t_angle;
   ci::Vec2f           t_nextPos[ 3 ];

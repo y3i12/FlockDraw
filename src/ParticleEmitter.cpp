@@ -145,7 +145,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
   if ( m_updateFlockTimer >= m_updateFlockEvery )
   {
     m_updateFlockTimer    = 0.0;
-    updateRatio           = static_cast< float >( _currentTime - m_lastFlockUpdateTime ) / m_updateFlockEvery;
+    updateRatio           = static_cast< float >( _currentTime - m_lastFlockUpdateTime / m_updateFlockEvery );
     m_lastFlockUpdateTime = _currentTime;
     updateFlock           = true;
   }
@@ -175,7 +175,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
 		  	
 		  	if ( distSqrd < m_zoneRadiusSqrd ) // Neighbor is in the zone
         {			
-		  		float percent = distSqrd/m_zoneRadiusSqrd;
+		  		float percent = distSqrd / m_zoneRadiusSqrd;
 	        
           if ( p1->m_group == p2->m_group )
           {

@@ -2,6 +2,10 @@
 #define __PARTICLE_EMITTER_H__
 
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
 #include <unordered_map>
 #include "cinder/Vector.h"
 #include "cinder/Surface.h"
@@ -48,6 +52,18 @@ public:
   static bool              s_debugDraw;
 private:
   void updateParticles( double _currentTime, double _delta, std::vector< Particle* >& _particles );
+  void threadProcessParticles( int _group );
+
+  std::vector< std::thread >  m_threads;
+  std::atomic< bool >         m_stop;
+  std::mutex                  m_startLock;
+  std::condition_variable     m_startCondition;
+  std::mutex                  m_doneLock;
+  std::condition_variable     m_doneCondition;
+  std::atomic< size_t >       m_processing;
+  
+  double                      m_currentTime;
+  double                      m_delta;
 
   float                  m_particlesPerSecondLeftOver;
   double                 m_updateFlockEvery;

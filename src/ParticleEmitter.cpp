@@ -4,8 +4,8 @@
 #include "cinder/app/App.h"
 #include "cinder/Vector.h"
 
-#define PI  3.14159265359f
-#define PI2 6.28318530718f
+#define PI            3.14159265359f
+#define PI2           6.28318530718f
 
 bool ParticleEmitter::s_debugDraw = false;
 
@@ -21,6 +21,10 @@ ParticleEmitter::ParticleEmitter(void) :
   m_lowThresh( 0.125f ),
   m_highThresh( 0.65f ),
   m_referenceSurface( 0 ),
+  m_stop( false ),
+  m_processing( 0 ),
+  m_currentTime( 0.0 ),
+  m_delta( 0.0 ),
   m_particlesPerSecondLeftOver( 0.0f ),
   m_updateFlockEvery( 0.1 ),
   m_updateFlockTimer( 0.0 ),
@@ -38,6 +42,11 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
   ci::Vec2f refSize;
   ci::Area  emissionArea( m_position, m_position );
   std::vector< Particle* >& particleVector = m_particles[ _group ];
+
+  if ( particleVector.size() == 0 ) // new thread?
+  {
+    m_threads.push_back( std::thread( &ParticleEmitter::threadProcessParticles, this, _group ) ); 
+  }
 
   if ( m_referenceSurface )
   {
@@ -135,11 +144,25 @@ void ParticleEmitter::update( double _currentTime, double _delta )
   }
 
   m_updateFlockTimer += _delta;
-  
-  for ( auto particleGroup : m_particles )
+
+  if ( m_particles.size() == 0 )
+  {
+    return;
+  }
+
+  m_currentTime       = _currentTime;
+  m_delta             = _delta;
+  m_processing        = m_threads.size();
+
+
+  std::unique_lock< std::mutex > cl( m_doneLock );
+  m_startCondition.notify_all();
+  m_doneCondition.wait( cl, [ this ](){ return m_processing != 0; } );
+
+  /*for ( auto particleGroup : m_particles )
   {
     updateParticles( _currentTime, _delta, particleGroup.second );
-  }
+  }*/
 
 }
 
@@ -234,10 +257,38 @@ void ParticleEmitter::updateParticles( double _currentTime, double _delta, std::
   }
 }
 
+void ParticleEmitter::threadProcessParticles( int _group )
+{
+  std::vector< Particle* >& _particles = m_particles[ _group ];
+  while ( !m_stop )
+  {
+    std::unique_lock< std::mutex > cl( m_startLock );
+    m_startCondition.wait( cl );
+    
+    if ( m_stop )
+    {
+      return;
+    }
 
+    updateParticles( m_currentTime, m_delta, _particles );
+
+    --m_processing;
+    m_doneCondition.notify_one();
+  }
+}
 
 void ParticleEmitter::killAll( double _currentTime )
 {
+  m_stop = true;
+  m_startCondition.notify_all();
+ 
+  for ( auto& thread : m_threads )
+  {
+    thread.join();
+  }
+
+  m_stop = false;
+
   for ( auto particleGroup : m_particles )
   {
     std::vector< Particle* >& particleVector   = particleGroup.second;

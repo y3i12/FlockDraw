@@ -141,7 +141,6 @@ void CinderApp::setup()
   m_gui->addParam( "Repel Str.",      &m_particleEmitter.m_repelStrength,       0.000f,     10.0f,   2.0f );
   m_gui->addParam( "Align Str.",      &m_particleEmitter.m_alignStrength,       0.000f,     10.0f,   2.0f );
   m_gui->addParam( "Att. Str.",       &m_particleEmitter.m_attractStrength,     0.000f,     10.0f,   1.0f );
-  m_gui->addParam( "Grp. Repel Str.", &m_particleEmitter.m_groupRepelStrength,  0.000f,     0.5f,   0.01f );
   m_gui->addParam( "Area Size",       &m_particleEmitter.m_zoneRadiusSqrd,      625.0f, 10000.0f, 5625.0f ),
   m_gui->addParam( "Repel Area",      &m_particleEmitter.m_lowThresh,             0.0f,     1.0f,  0.125f );
   m_gui->addParam( "Align Area",      &m_particleEmitter.m_highThresh,            0.0f,     1.0f,   0.65f );

@@ -2,6 +2,7 @@
 #define __PARTICLE_EMITTER_H__
 
 #include <vector>
+#include <unordered_map>
 #include "cinder/Vector.h"
 #include "cinder/Surface.h"
 #include "cinder/gl/Texture.h"
@@ -25,7 +26,7 @@ public:
 
   virtual void killAll( double _currentTime );
 
-  std::vector< Particle* > m_particles;
+  std::unordered_map< int, std::vector< Particle* > > m_particles;
   ci::Vec2f                m_position;
   double                   m_maxLifeTime;
   double                   m_minLifeTime;
@@ -37,7 +38,6 @@ public:
   float                    m_repelStrength;
   float                    m_alignStrength;
   float                    m_attractStrength;
-  float                    m_groupRepelStrength;
   float                    m_lowThresh;
   float                    m_highThresh;
                            
@@ -47,7 +47,7 @@ public:
 
   static bool              s_debugDraw;
 private:
-  void updateParticlesQuadratic( double _currentTime, double _delta );
+  void updateParticles( double _currentTime, double _delta, std::vector< Particle* >& _particles );
 
   float                  m_particlesPerSecondLeftOver;
   double                 m_updateFlockEvery;

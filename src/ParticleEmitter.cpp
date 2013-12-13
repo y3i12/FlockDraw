@@ -18,7 +18,6 @@ ParticleEmitter::ParticleEmitter(void) :
   m_repelStrength( 0.04f ),
   m_alignStrength( 0.04f ),
   m_attractStrength( 0.02f ),
-  m_groupRepelStrength( 0.1f ),
   m_lowThresh( 0.125f ),
   m_highThresh( 0.65f ),
   m_referenceSurface( 0 ),
@@ -38,7 +37,8 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
 {
   ci::Vec2f refSize;
   ci::Area  emissionArea( m_position, m_position );
-  
+  std::vector< Particle* >& particleVector = m_particles[ _group ];
+
   if ( m_referenceSurface )
   {
     refSize = m_referenceSurface->getSize();
@@ -81,29 +81,35 @@ void ParticleEmitter::addParticles( int _aumont, int _group )
     p->m_acceleration        *= 2.5f;
     p->m_group                = _group;
     
-    m_particles.push_back( p );
+    particleVector.push_back( p );
   }
 }
 
 void ParticleEmitter::draw( void )
 {
-  std::vector< Particle* >::iterator itr     = m_particles.begin();
-  std::vector< Particle* >::iterator itr_end = m_particles.end();
-
-  for ( ; itr != itr_end; ++itr )
+  for ( auto particleGroup : m_particles )
   {
-    ( *itr )->draw();
+    std::vector< Particle* >::iterator itr     = particleGroup.second.begin();
+    std::vector< Particle* >::iterator itr_end = particleGroup.second.end();
+
+    for ( ; itr != itr_end; ++itr )
+    {
+      ( *itr )->draw();
+    }
   }
 }
 
 void ParticleEmitter::debugDraw( void )
 {
-  std::vector< Particle* >::iterator itr     = m_particles.begin();
-  std::vector< Particle* >::iterator itr_end = m_particles.end();
-
-  for ( ; itr != itr_end; ++itr )
+  for ( auto particleGroup : m_particles )
   {
-    ( *itr )->debugDraw();
+    std::vector< Particle* >::iterator itr     = particleGroup.second.begin();
+    std::vector< Particle* >::iterator itr_end = particleGroup.second.end();
+
+    for ( ; itr != itr_end; ++itr )
+    {
+      ( *itr )->debugDraw();
+    }
   }
 }
 
@@ -129,14 +135,18 @@ void ParticleEmitter::update( double _currentTime, double _delta )
   }
 
   m_updateFlockTimer += _delta;
-  updateParticlesQuadratic( _currentTime, _delta );
+  
+  for ( auto particleGroup : m_particles )
+  {
+    updateParticles( _currentTime, _delta, particleGroup.second );
+  }
 
 }
 
-void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _delta )
+void ParticleEmitter::updateParticles( double _currentTime, double _delta, std::vector< Particle* >& _particles )
 {
   size_t itr     = 0;
-  size_t itr_end = m_particles.size();
+  size_t itr_end = _particles.size();
   size_t itr2;
   bool   updateFlock = false;
   float  updateRatio = 0.0f;
@@ -153,15 +163,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
   // update the flocking routine
   while ( itr < itr_end )
   {
-    Particle* p1 = m_particles[ itr ];
-        
-    if ( p1->m_timeOfDeath <= _currentTime && p1->m_timeOfDeath != -1.0f )
-    {
-      --itr_end;
-      delete p1;
-      m_particles.erase( m_particles.begin() + itr );
-      continue;
-    }
+    Particle* p1 = _particles[ itr ];
     
     if ( updateFlock )
     {
@@ -169,7 +171,7 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
       
       for( ++itr2; itr2 != itr_end; ++itr2 )
       {
-        Particle* p2 = m_particles[ itr2 ];
+        Particle* p2 = _particles[ itr2 ];
         dir = p1->m_position - p2->m_position;
         float distSqrd = dir.lengthSquared();
 		  	
@@ -177,62 +179,51 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
         {			
 		  		float percent = distSqrd / m_zoneRadiusSqrd;
 	        
-          if ( p1->m_group == p2->m_group )
+		  		if( percent < m_lowThresh )			// Separation
           {
-		  		  if( percent < m_lowThresh )			// Separation
+            if ( m_repelStrength < 0.0001f )
             {
-              if ( m_repelStrength < 0.0001f )
-              {
-                continue;
-              }
+              continue;
+            }
 
-		  			  float F = m_lowThresh * m_repelStrength * updateRatio;
-		  			  dir = dir.normalized() * F;
-		  	
-		  			  p1->m_acceleration += dir;
-		  			  p2->m_acceleration -= dir;
-		  		  } 
-            else if( percent < m_highThresh ) // Alignment
-            {	
-              if ( m_alignStrength < 0.0001f )
-              {
-                continue;
-              }
-
-		  			  float threshDelta     = m_highThresh - m_lowThresh;
-		  			  float adjustedPercent	= ( percent - m_lowThresh ) / threshDelta;
-		  			  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength * updateRatio;
-		  			
-		  			  p1->m_acceleration += p2->m_direction * F;
-		  			  p2->m_acceleration += p1->m_direction * F;
-		  			
-		  		  } 
-            else 								// Cohesion
-            {
-              if ( m_attractStrength < 0.0001f )
-              {
-                continue;
-              }
-
-		  			  float threshDelta     = 1.0f - m_highThresh;
-		  			  float adjustedPercent	= ( percent - m_highThresh )/threshDelta;
-		  			  float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength * updateRatio;
-		  								
-		  			  dir.normalize();
-		  			  dir *= F;
-		  	
-		  			  p1->m_acceleration -= dir;
-		  			  p2->m_acceleration += dir;
-		  		  }
-          }
-          else if ( m_groupRepelStrength > 0.0001f )
-          {
-		  			float F = ( m_highThresh / percent - 1.0f ) * m_groupRepelStrength * updateRatio;
+		  			float F = m_lowThresh * m_repelStrength * updateRatio;
 		  			dir = dir.normalized() * F;
 		  	
 		  			p1->m_acceleration += dir;
 		  			p2->m_acceleration -= dir;
-          }
+		  		} 
+          else if( percent < m_highThresh ) // Alignment
+          {	
+            if ( m_alignStrength < 0.0001f )
+            {
+              continue;
+            }
+
+		  			float threshDelta     = m_highThresh - m_lowThresh;
+		  			float adjustedPercent	= ( percent - m_lowThresh ) / threshDelta;
+		  			float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_alignStrength * updateRatio;
+		  			
+		  			p1->m_acceleration += p2->m_direction * F;
+		  			p2->m_acceleration += p1->m_direction * F;
+		  			
+		  		} 
+          else 								// Cohesion
+          {
+            if ( m_attractStrength < 0.0001f )
+            {
+              continue;
+            }
+
+		  			float threshDelta     = 1.0f - m_highThresh;
+		  			float adjustedPercent	= ( percent - m_highThresh )/threshDelta;
+		  			float F               = ( 1.0f - ( cos( adjustedPercent * PI2 ) * -0.5f + 0.5f ) ) * m_attractStrength * updateRatio;
+		  								
+		  			dir.normalize();
+		  			dir *= F;
+		  	
+		  			p1->m_acceleration -= dir;
+		  			p2->m_acceleration += dir;
+		  		}
 		  	}
       }
     }
@@ -247,14 +238,18 @@ void ParticleEmitter::updateParticlesQuadratic( double _currentTime, double _del
 
 void ParticleEmitter::killAll( double _currentTime )
 {
-  std::vector< Particle* >::iterator itr     = m_particles.begin();
-  std::vector< Particle* >::iterator itr_end = m_particles.end();
-  std::vector< Particle* >::iterator itr2;
-
-  // update the flocking routine
-  while ( itr != itr_end )
+  for ( auto particleGroup : m_particles )
   {
-    ( *itr )->m_timeOfDeath = _currentTime + 3.0f;
-    ++itr;
+    std::vector< Particle* >& particleVector   = particleGroup.second;
+    std::vector< Particle* >::iterator itr     = particleVector.begin();
+    std::vector< Particle* >::iterator itr_end = particleVector.end();
+
+    // update the flocking routine
+    while ( itr != itr_end )
+    {
+      delete *itr;
+      ++itr;
+    }
   }
+  m_particles.clear();
 }

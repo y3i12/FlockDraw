@@ -95,11 +95,11 @@ void Particle::update( double _currentTime, double _delta )
     
     if ( t_l[ 1 ] < t_l[ 0 ] )
     {
-      m_velocity.rotate( t_angle );
+      m_velocity.rotate( t_angle * _delta );
     }
     else if ( t_l[ 2 ] < t_l[ 0 ] )
     {
-      m_velocity.rotate( t_angle * -2.0f );
+      m_velocity.rotate( t_angle * -2.0f * _delta );
     }
   }
 }

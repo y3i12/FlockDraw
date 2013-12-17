@@ -7,6 +7,8 @@
 #include "cinder/Filesystem.h"
 #include "cinder/app/FileDropEvent.h"
 #include "cinder/ip/Resize.h"
+#include "cinder/qtime/MovieWriter.h"
+#include "cinder/Utilities.h"
 #include "ParticleEmitter.h"
 #include "SimpleGUI.h"
 
@@ -14,15 +16,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define SGUI_CONFIG_FILE_EXT "cfg"
-#define SHOW_FPS
+#define FRAMERATE 60.0f
+#define VIDEO_FRAMERATE 30.0f
+#define WINDOWED
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined SHOW_FPS
 #include <sstream>
 #include "FPSCounter.h"
-#endif
 
 #define DEBUG_DRAW
 
@@ -72,17 +74,19 @@ public:
   sgui::LabelControl*         m_currentImageLabel;
 	sgui::PanelControl*         m_mainPanel;
 	sgui::PanelControl*         m_helpPanel;
+	sgui::PanelControl*         m_FPSPanel;
+  
+  ci::fs::path                m_vidPath;
+  long                        m_currentFrame;
 
 private:
   double                      m_lastTime;
   double                      m_currentTime;
   double                      m_cycleCounter;
 
-#if defined SHOW_FPS
   sgui::LabelControl*         m_fps;
   FPSCounter                  m_fpsCounter;
   FPSCounter                  m_upsCounter;
-#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,6 +98,7 @@ void CinderApp::setup()
   m_cycleImageEvery = 0.0;
   m_particleCount   = 0;
   m_particleGroups  = 0;
+  m_currentFrame    = -1;
 
   // buffer for trails
   ci::Vec2i      displaySz = getWindowSize(); 
@@ -124,9 +129,9 @@ void CinderApp::setup()
   m_gui->addParam( "Particle Size",   &Particle::s_particleSizeRatio,   0.5f,   3.0f,  1.0f );
   m_gui->addParam( "Particle Speed",  &Particle::s_particleSpeedRatio,  0.2f,   3.0f,  1.0f );
   m_gui->addParam( "Dampness",        &Particle::s_dampness,           0.01f,  0.99f,  0.9f );
-  m_gui->addParam( "Color Guidance",  &Particle::s_colorRedirection,    0.0f,  20.0f,  5.0f );
+  m_gui->addParam( "Color Guidance",  &Particle::s_colorRedirection,    0.0f, 360.0f, 90.0f );
 
-#ifdef _DEBUG
+#ifdef WINDOWED
   m_gui->addParam( "#Particles", &m_particleCount,   50, 1000, 500 );
   m_gui->addParam( "#Groups",    &m_particleGroups,   1,   20,   5  );
 #else
@@ -161,20 +166,22 @@ void CinderApp::setup()
   // deserved credits
   m_gui->addSeparator();
   m_gui->addLabel( "y3i12: Yuri Ivatchkovitch" );
-  m_gui->addLabel( "http://y3i12.tumblr.com/"  );
+  m_gui->addLabel( "http://y3i12.com/"  );
   
   // Help!
   m_gui->addColumn();
   m_helpPanel = m_gui->addPanel();
   
-  m_gui->addLabel( "Quick Help:"            );
-  m_gui->addLabel( "F1  to show/hide help"  );
-	m_gui->addLabel( "'h' to show/hide GUI"   );
-  m_gui->addLabel( "'s' to save config"     );
-  m_gui->addLabel( "'l' to load config"     );
-  m_gui->addLabel( "'o' to open image"      );
-  m_gui->addLabel( "SPACE to skip image"    );
-  m_gui->addLabel( "ESC to quit"            );
+  m_gui->addLabel( "Quick Help:"              );
+  m_gui->addLabel( "F1  to show/hide help"    );
+	m_gui->addLabel( "'h' to show/hide GUI"     );
+  m_gui->addLabel( "'s' to save config"       );
+  m_gui->addLabel( "'l' to load config"       );
+  m_gui->addLabel( "'o' to open image"        );
+  m_gui->addLabel( "'c' to start/end capture" );
+  m_gui->addLabel( "'f' to hide/show fps"     );
+  m_gui->addLabel( "SPACE to skip image"      );
+  m_gui->addLabel( "ESC to quit"              );
   
   m_gui->addSeparator();
   m_gui->addSeparator();
@@ -182,10 +189,10 @@ void CinderApp::setup()
   m_gui->addLabel( "Drag multiple files"    );
   m_gui->addLabel( "to slideshow!"          );
   
-#if defined SHOW_FPS
+  m_FPSPanel = m_gui->addPanel();
+  m_FPSPanel->enabled = false;
   m_gui->addColumn( 620, 5 );
   m_fps = m_gui->addLabel( "" );
-#endif
 
   // load images passed via args
   if ( getArgs().size() > 1 )
@@ -254,7 +261,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 		case 'd': 
       {
         ParticleEmitter::s_debugDraw = !ParticleEmitter::s_debugDraw;
-        m_particleEmitter.killAll( -1 );
+        m_particleEmitter.killAll();
         m_particleEmitter.addParticles( 10, 1 );
       }
       break; //prints values of all the controls to the console			
@@ -269,6 +276,34 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
         {
           m_gui->load( aPath.string() );
         } 
+      }
+      break;
+
+		case 'c': 
+      {
+        if ( m_currentFrame == -1 )
+        {
+          m_currentFrame   = 0;
+          size_t vidNumber = 0;
+          
+          while ( true )
+          {            
+            m_vidPath = ci::getDocumentsDirectory() / ( "FlockDrawCapture_" + ci::toString( vidNumber ) );
+           
+            if ( !ci::fs::exists( m_vidPath ) )
+            {
+              ci::fs::create_directories( m_vidPath );
+              break;
+            }
+            ++vidNumber;
+          }
+          setImage( m_files.front(), m_currentTime );
+        }
+        else // ends capture
+        {
+          m_currentFrame = -1;
+          setImage( m_files.front(), m_currentTime );
+        }
       }
       break;
 
@@ -296,6 +331,11 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
       }
       break;
 
+    case 'f':
+      {
+        m_FPSPanel->enabled = !m_FPSPanel->enabled;
+      }
+      break;
     case 'o':
       {
         openImageCallBack();
@@ -307,6 +347,7 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
   {
   case ci::app::KeyEvent::KEY_ESCAPE: 
     {
+      m_particleEmitter.killAll();
       quit(); 
     }
     break;
@@ -319,7 +360,14 @@ void CinderApp::keyDown( ci::app::KeyEvent _event )
 
   case ci::app::KeyEvent::KEY_SPACE:  
     {
-      nextImageCallBack();
+      if ( m_files.size() == 1 )
+      {
+        setImage( m_files.front(), m_currentTime );
+      }
+      else
+      {
+        nextImageCallBack();
+      }
     }
     break;
 	}
@@ -386,7 +434,7 @@ void CinderApp::setImage( ci::fs::path& _path, double _currentTime )
   updateOutputArea( m_surface.getSize() );
 
   // kill old particles and add new ones
-  m_particleEmitter.killAll( _currentTime );
+  m_particleEmitter.killAll();
 
   for ( int i = 0; i < m_particleGroups; ++i )
   {
@@ -401,12 +449,22 @@ void CinderApp::setImage( ci::fs::path& _path, double _currentTime )
 
 void CinderApp::update()
 {
-  m_currentTime = ci::app::getElapsedSeconds();
-  double delta  = m_currentTime - m_lastTime;
+  double delta = 0.0;
+  if ( m_currentFrame != -1 ) // capturing video - renders constant framerate
+  {
+    delta = 1.0 / VIDEO_FRAMERATE;
+    m_currentTime += delta;
+  }
+  else // not capturing, render whatever it goes
+  {
+    m_currentTime = ci::app::getElapsedSeconds();
+    delta         = m_currentTime - m_lastTime;
+  }
 
-#if defined SHOW_FPS
-  m_upsCounter.update();
-#endif
+  if ( m_FPSPanel->enabled )
+  {
+    m_upsCounter.update();
+  }
 
   if ( m_cycleCounter != -1.0 )
   {
@@ -433,24 +491,23 @@ void CinderApp::update()
 
 void CinderApp::draw()
 {
-  
-#if defined SHOW_FPS
-  m_fpsCounter.update();
-  if ( m_fpsCounter.m_updated )
+  if ( m_FPSPanel->enabled )
   {
-    m_fpsCounter.m_updated = false;
-    std::ostringstream oss;
-    oss << "fps: " << ( m_fpsCounter.get() ) << " / ups: " << ( m_upsCounter.get() );
-    m_fps->setText( oss.str() );
+    m_fpsCounter.update();
+    if ( m_fpsCounter.m_updated )
+    {
+      m_fpsCounter.m_updated = false;
+      std::ostringstream oss;
+      oss << "fps: " << ( m_fpsCounter.get() ) << " / ups: " << ( m_upsCounter.get() );
+      m_fps->setText( oss.str() );
+    }
   }
-#endif
-
+  
 	// clear out the window with black and set gl confs
 	ci::gl::clear( ci::Color( 0.0f, 0.0f, 0.0f ) );
   ci::gl::disableDepthRead();    
   ci::gl::pushMatrices();
   ci::gl::translate( ci::Vec3f( 0.0f, 0.0f, 0.0f ) );
-
 
   // writes backed up frame buffer to the screen
   m_frameBufferObject.blitToScreen( getWindowBounds(), getWindowBounds() );
@@ -460,13 +517,18 @@ void CinderApp::draw()
   ci::gl::color( 0.0f, 0.0f, 0.0f, 0.01f ); 
   ci::gl::drawSolidRect( getWindowBounds() );
 
-
   // do the drawing =D
   m_particleEmitter.draw();
-    
 
-    // save what happened to the framebuffer
+  // save what happened to the framebuffer
   m_frameBufferObject.blitFromScreen( getWindowBounds(), getWindowBounds() );  
+
+  // captures the video
+  if ( m_currentFrame != -1 ) 
+  {
+     ci::writeImage( m_vidPath / ( ci::toString( m_currentFrame ) + ".jpg" ), m_frameBufferObject.getTexture() );        
+     m_currentFrame++;
+  }
 
   if ( ParticleEmitter::s_debugDraw )
   {
@@ -477,7 +539,7 @@ void CinderApp::draw()
   ci::gl::enableDepthRead();    
   ci::gl::disableAlphaBlending();
   ci::gl::popMatrices();	
-
+  
   // draw the UI
   m_gui->draw();
 }
@@ -486,7 +548,7 @@ void CinderApp::draw()
 
 void CinderApp::prepareSettings( Settings *settings )
 {
-#if defined _DEBUG
+#if defined WINDOWED
   settings->setWindowSize( 800, 600 );
 #else
   // set the window size and etc.
@@ -498,7 +560,7 @@ void CinderApp::prepareSettings( Settings *settings )
   settings->setFullScreen( true );
 #endif
   
-  settings->setFrameRate( 60.0f );
+  settings->setFrameRate( FRAMERATE );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

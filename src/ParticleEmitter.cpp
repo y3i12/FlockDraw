@@ -178,7 +178,7 @@ void ParticleEmitter::updateParticles( double _currentTime, double _delta, std::
   if ( m_updateFlockTimer >= m_updateFlockEvery )
   {
     m_updateFlockTimer    = 0.0;
-    updateRatio           = static_cast< float >( _currentTime - m_lastFlockUpdateTime / m_updateFlockEvery );
+    updateRatio           = static_cast< float >( ( _currentTime - m_lastFlockUpdateTime ) / m_updateFlockEvery );
     m_lastFlockUpdateTime = _currentTime;
     updateFlock           = true;
   }
@@ -277,7 +277,7 @@ void ParticleEmitter::threadProcessParticles( int _group )
   }
 }
 
-void ParticleEmitter::killAll( double _currentTime )
+void ParticleEmitter::killAll()
 {
   m_stop = true;
   m_startCondition.notify_all();
@@ -286,6 +286,7 @@ void ParticleEmitter::killAll( double _currentTime )
   {
     thread.join();
   }
+  m_threads.clear();
 
   m_stop = false;
 

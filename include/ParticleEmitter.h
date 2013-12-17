@@ -28,7 +28,7 @@ public:
   virtual void debugDraw( void );
   virtual void update( double _currentTime, double _delta );
 
-  virtual void killAll( double _currentTime );
+  virtual void killAll();
 
   std::unordered_map< int, std::vector< Particle* > > m_particles;
   ci::Vec2f                m_position;

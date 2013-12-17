@@ -7,7 +7,6 @@
 #include "cinder/Filesystem.h"
 #include "cinder/app/FileDropEvent.h"
 #include "cinder/ip/Resize.h"
-#include "cinder/qtime/MovieWriter.h"
 #include "cinder/Utilities.h"
 #include "ParticleEmitter.h"
 #include "SimpleGUI.h"
@@ -16,8 +15,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define SGUI_CONFIG_FILE_EXT "cfg"
-#define FRAMERATE 60.0f
-#define VIDEO_FRAMERATE 30.0f
+#define FRAMERATE            60.0f
+#define VIDEO_FRAMERATE      30.0f
 #define WINDOWED
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -190,9 +189,9 @@ void CinderApp::setup()
   m_gui->addLabel( "to slideshow!"          );
   
   m_FPSPanel = m_gui->addPanel();
-  m_FPSPanel->enabled = false;
   m_gui->addColumn( 620, 5 );
   m_fps = m_gui->addLabel( "" );
+  m_FPSPanel->enabled = false;
 
   // load images passed via args
   if ( getArgs().size() > 1 )

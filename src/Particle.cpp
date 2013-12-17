@@ -95,17 +95,25 @@ void Particle::update( double _currentTime, double _delta )
     
     if ( t_l[ 1 ] < t_l[ 0 ] )
     {
-      m_velocity.rotate( t_angle * _delta );
+      m_velocity.rotate( static_cast< float >( t_angle * _delta ) );
     }
     else if ( t_l[ 2 ] < t_l[ 0 ] )
     {
-      m_velocity.rotate( t_angle * -2.0f * _delta );
+      m_velocity.rotate( static_cast< float >( t_angle * -2.0f * _delta ) );
     }
   }
 }
 
 void Particle::draw( void )
 {
+  t_sourceArea.x1 = static_cast< int >( m_position.x - Particle::s_maxRadius );
+  t_sourceArea.y1 = static_cast< int >( m_position.y - Particle::s_maxRadius );
+  t_sourceArea.x2 = static_cast< int >( m_position.x + Particle::s_maxRadius );
+  t_sourceArea.y2 = static_cast< int >( m_position.y + Particle::s_maxRadius );
+
+  t_color      = m_referenceSurface->areaAverage( t_sourceArea );
+  //t_color      = m_referenceSurface->getPixel( m_position );
+
   t_color      = m_referenceSurface->getPixel( m_position );
   float radius = ( 1.0f + Particle::s_maxRadius * LUMINANCE( t_color.r, t_color.g, t_color.b ) ) * Particle::s_particleSizeRatio;
 

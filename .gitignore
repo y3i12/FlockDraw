@@ -1,5 +1,13 @@
-*.jpg
-vc11/FlockDraw.opensdf
-vc11/FlockDraw.sdf
-vc11/Debug/
-vc11/Release/
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a

@@ -50,7 +50,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include;"\Cinder\include";"\Cinder\boost";\Cinder\blocks\SimpleGUI\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;"\Cinder\include";"\Cinder\boost";\Cinder\blocks\SimpleGUI\include;\Cinder\blocks\FMOD\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -64,7 +64,7 @@
       <AdditionalIncludeDirectories>"\Cinder\include";..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>cinder_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cinder_d.lib;%(AdditionalDependencies);\Cinder\blocks\FMOD\lib\msw\fmodex_vc.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>"\Cinder\lib";"\Cinder\lib\msw"</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -73,10 +73,13 @@
       <TargetMachine>MachineX86</TargetMachine>
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCPMT</IgnoreSpecificDefaultLibraries>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "\Cinder\blocks\FMOD\lib\msw\fmodex.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\include;"\Cinder\include";"\Cinder\boost";\Cinder\blocks\SimpleGUI\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;"\Cinder\include";"\Cinder\boost";\Cinder\blocks\SimpleGUI\include;\Cinder\blocks\FMOD\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
@@ -91,7 +94,7 @@
       <AdditionalIncludeDirectories>"\Cinder\include";..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>cinder.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cinder.lib;%(AdditionalDependencies);\Cinder\blocks\FMOD\lib\msw\fmodex_vc.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>"\Cinder\lib";"\Cinder\lib\msw"</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
@@ -102,6 +105,9 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "\Cinder\blocks\FMOD\lib\msw\fmodex.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />

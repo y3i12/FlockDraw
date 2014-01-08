@@ -11,3 +11,8 @@
 *.lai
 *.la
 *.a
+vc11/Debug/
+*.jpg
+vc11/Release/
+*.opensdf
+*.sdf
